@@ -1,0 +1,10 @@
+Random hex modifiers for boss fights! Each boss fight rolls a set of random hexes that affect players and bosses for the duration of the fight.
+
+Features:
+- Flashy Hexes: dramatic effects like Invisible Boss, Meteor Shower, Unstable Gravity, Wing Clip
+- Modifier Hexes: stat changes like Sluggish, Frail, Broken Armor, Swift Boss
+- Constraint Hexes: restrictions like No Ranged Damage, No Grapple, Grounded
+
+Hexes persist until the boss is defeated - respawning the same boss type keeps the same hex.
+
+Fully configurable - enable/disable any hex category.
