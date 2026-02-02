@@ -3,7 +3,7 @@ Mods: {
 		Config: {
 			Headers: {
 				General: General
-				HexCategories: Hex Categories
+				HexCategories: "Hex Categories"
 			}
 		}
 	}
