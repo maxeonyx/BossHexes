@@ -7,11 +7,11 @@ public sealed class BossHexesConfig : ModConfig
 {
     public override ConfigScope Mode => ConfigScope.ServerSide;
 
-    [Header("General")]
+    [Header("$Mods.BossHexes.Config.Headers.General")]
     [DefaultValue(true)]
     public bool EnableBossHexes;
 
-    [Header("Hex Categories")]
+    [Header("$Mods.BossHexes.Config.Headers.HexCategories")]
     [DefaultValue(true)]
     public bool EnableFlashyHexes;
 

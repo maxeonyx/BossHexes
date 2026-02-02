@@ -1,0 +1,10 @@
+Mods: {
+	BossHexes: {
+		Config: {
+			Headers: {
+				General: General
+				HexCategories: Hex Categories
+			}
+		}
+	}
+}
