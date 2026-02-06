@@ -93,8 +93,19 @@ public sealed class BossHexesState : ModSystem
                         var p = Main.player[i];
                         if (p?.active == true && !p.dead)
                         {
-                            p.KillMe(Terraria.DataStructures.PlayerDeathReason.ByCustomReason(
-                                NetworkText.FromLiteral($"{p.name} ran out of time.")), 9999.0, 0);
+                            string deathReason = $"{p.name} ran out of time.";
+                            
+                            if (Main.netMode == NetmodeID.Server)
+                            {
+                                // Multiplayer: send packet to client
+                                BossHexes.SendKillPlayer(Mod, i, deathReason);
+                            }
+                            else
+                            {
+                                // Singleplayer: kill directly
+                                p.KillMe(Terraria.DataStructures.PlayerDeathReason.ByCustomReason(
+                                    NetworkText.FromLiteral(deathReason)), 9999.0, 0);
+                            }
                         }
                     }
                 }
@@ -124,7 +135,16 @@ public sealed class BossHexesState : ModSystem
                     var p = Main.player[i];
                     if (p?.active == true && !p.dead)
                     {
-                        p.gravDir *= -1;
+                        if (Main.netMode == NetmodeID.Server)
+                        {
+                            // Multiplayer: send packet to client
+                            BossHexes.SendFlipGravity(Mod, i);
+                        }
+                        else
+                        {
+                            // Singleplayer: flip directly
+                            p.gravDir *= -1;
+                        }
                     }
                 }
                 

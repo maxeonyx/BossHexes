@@ -43,6 +43,12 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!hexes.HasAnyHex)
             return;
 
+        // Sync hex state to all clients
+        if (Main.netMode == NetmodeID.Server)
+        {
+            BossHexManager.SendSync(Mod, -1, -1);
+        }
+
         // Announce all active hexes
         var hexNames = hexes.GetActiveHexNames();
         if (hexNames.Count == 0)
@@ -247,6 +253,12 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
         // Clear hex persistence for this boss type
         BossHexManager.OnBossDefeated(npc.type);
+
+        // Sync cleared state to clients
+        if (Main.netMode == NetmodeID.Server)
+        {
+            BossHexManager.SendSync(Mod, -1, -1);
+        }
 
         if (Main.netMode == NetmodeID.Server)
             ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral("Boss defeated! Hex cleared."), Color.LimeGreen);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 using BossHexes.Common.Config;
 
@@ -440,5 +441,46 @@ public static class BossHexManager
                 count++;
         }
         return Math.Max(1, count);
+    }
+
+    /// <summary>
+    /// Send hex state to clients. Called from server after rolling hexes.
+    /// </summary>
+    public static void SendSync(Mod mod, int toWho = -1, int ignoreClient = -1)
+    {
+        if (Main.netMode == NetmodeID.SinglePlayer)
+            return;
+
+        ModPacket packet = mod.GetPacket();
+        packet.Write((byte)BossHexes.MessageType.SyncHexes);
+        packet.Write(CurrentBossType);
+        packet.Write((byte)Current.Flashy);
+        packet.Write((byte)Current.Modifier);
+        packet.Write((byte)Current.Constraint);
+        packet.Write(Current.TimeLimitTicks);
+        packet.Write(Current.TimeLimitMaxTicks);
+        packet.Write(Current.PacifistHealerIndex);
+        packet.Send(toWho, ignoreClient);
+    }
+
+    /// <summary>
+    /// Receive hex state from server. Called on clients.
+    /// </summary>
+    public static void ReceiveSync(
+        int bossType,
+        FlashyHex flashy,
+        ModifierHex modifier,
+        ConstraintHex constraint,
+        int timeLimitTicks,
+        int timeLimitMaxTicks,
+        int pacifistHealerIndex)
+    {
+        CurrentBossType = bossType;
+        Current.Flashy = flashy;
+        Current.Modifier = modifier;
+        Current.Constraint = constraint;
+        Current.TimeLimitTicks = timeLimitTicks;
+        Current.TimeLimitMaxTicks = timeLimitMaxTicks;
+        Current.PacifistHealerIndex = pacifistHealerIndex;
     }
 }

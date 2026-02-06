@@ -14,6 +14,15 @@ public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
 
+    public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
+    {
+        // When a player joins, sync the current hex state to them
+        if (Main.netMode == NetmodeID.Server && BossHexManager.Current.HasAnyHex)
+        {
+            BossHexManager.SendSync(Mod, toWho, fromWho);
+        }
+    }
+
     public override void PostUpdate()
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
