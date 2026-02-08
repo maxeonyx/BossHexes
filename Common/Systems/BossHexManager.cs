@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 using BossHexes.Common.Config;
 
 namespace BossHexes.Common.Systems;
@@ -482,5 +483,48 @@ public static class BossHexManager
         Current.TimeLimitTicks = timeLimitTicks;
         Current.TimeLimitMaxTicks = timeLimitMaxTicks;
         Current.PacifistHealerIndex = pacifistHealerIndex;
+    }
+
+    /// <summary>
+    /// Save persisted hex rolls to world data.
+    /// Only saves the three hex enum values per boss — runtime state (timers etc.) is per-fight.
+    /// </summary>
+    public static void SaveWorldData(TagCompound tag)
+    {
+        var list = new List<TagCompound>();
+        foreach (var (bossType, hexes) in _persistedHexes)
+        {
+            list.Add(new TagCompound
+            {
+                ["bossType"] = bossType,
+                ["flashy"] = (byte)hexes.Flashy,
+                ["modifier"] = (byte)hexes.Modifier,
+                ["constraint"] = (byte)hexes.Constraint,
+            });
+        }
+        tag["bossHexes"] = list;
+    }
+
+    /// <summary>
+    /// Load persisted hex rolls from world data.
+    /// </summary>
+    public static void LoadWorldData(TagCompound tag)
+    {
+        _persistedHexes.Clear();
+        if (!tag.ContainsKey("bossHexes"))
+            return;
+
+        var list = tag.GetList<TagCompound>("bossHexes");
+        foreach (var entry in list)
+        {
+            int bossType = entry.GetInt("bossType");
+            var hexes = new ActiveHexes
+            {
+                Flashy = (FlashyHex)entry.GetByte("flashy"),
+                Modifier = (ModifierHex)entry.GetByte("modifier"),
+                Constraint = (ConstraintHex)entry.GetByte("constraint"),
+            };
+            _persistedHexes[bossType] = hexes;
+        }
     }
 }

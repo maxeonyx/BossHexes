@@ -4,6 +4,7 @@ using Terraria.Chat;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 using BossHexes.Common.Config;
 
 namespace BossHexes.Common.Systems;
@@ -25,6 +26,16 @@ public sealed class BossHexesState : ModSystem
         _lastBossType = -1;
         BossHexManager.OnWorldLoad();
         _meteorController.Reset();
+    }
+
+    public override void SaveWorldData(TagCompound tag)
+    {
+        BossHexManager.SaveWorldData(tag);
+    }
+
+    public override void LoadWorldData(TagCompound tag)
+    {
+        BossHexManager.LoadWorldData(tag);
     }
 
     public override void PostUpdateWorld()
