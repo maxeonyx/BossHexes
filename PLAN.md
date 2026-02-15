@@ -1,5 +1,9 @@
 # Boss Hexes — Plan
 
+## Design Decisions
+
+- **Always 3 hexes per fight** — one flashy, one modifier, one constraint. Player count doesn't affect hex count. Individual categories can be disabled via config.
+
 ## Known Issues
 
 ### Eater of Worlds hexes not appearing (reported, cause uncertain)
