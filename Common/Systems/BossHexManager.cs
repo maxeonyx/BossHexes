@@ -271,9 +271,8 @@ public static class BossHexManager
             return;
         }
 
-        // Roll new hexes based on player count
-        int playerCount = CountActivePlayers();
-        Current = RollHexes(playerCount, cfg);
+        // Roll new hexes
+        Current = RollHexes(cfg);
         
         // Set up time limit if rolled
         if (Current.Flashy == FlashyHex.TimeLimit)
@@ -283,7 +282,7 @@ public static class BossHexManager
         }
         
         // Set up pacifist healer if rolled
-        if (Current.Constraint == ConstraintHex.PacifistHealer && playerCount > 1)
+        if (Current.Constraint == ConstraintHex.PacifistHealer && CountActivePlayers() > 1)
         {
             Current.PacifistHealerIndex = Main.rand.Next(Main.maxPlayers);
             // Find a valid player
@@ -369,66 +368,16 @@ public static class BossHexManager
         return ImplementedConstraintHexes[Main.rand.Next(ImplementedConstraintHexes.Length)];
     }
 
-    private static ActiveHexes RollHexes(int playerCount, BossHexesConfig cfg)
+    private static ActiveHexes RollHexes(BossHexesConfig cfg)
     {
         var hexes = new ActiveHexes();
 
-        // Build list of enabled categories
-        var enabledCategories = new List<int>();
-        if (cfg.EnableFlashyHexes) enabledCategories.Add(0);
-        if (cfg.EnableModifierHexes) enabledCategories.Add(1);
-        if (cfg.EnableConstraintHexes) enabledCategories.Add(2);
-
-        if (enabledCategories.Count == 0)
-            return hexes; // No hexes enabled
-
-        if (playerCount == 1)
-        {
-            // 1 player: 1 hex from any enabled category
-            int category = enabledCategories[Main.rand.Next(enabledCategories.Count)];
-            ApplyHexCategory(hexes, category);
-        }
-        else if (playerCount == 2)
-        {
-            // 2 players: 2 hexes from 2 different enabled categories
-            if (enabledCategories.Count >= 2)
-            {
-                int idx1 = Main.rand.Next(enabledCategories.Count);
-                int idx2 = (idx1 + Main.rand.Next(1, enabledCategories.Count)) % enabledCategories.Count;
-                ApplyHexCategory(hexes, enabledCategories[idx1]);
-                ApplyHexCategory(hexes, enabledCategories[idx2]);
-            }
-            else if (enabledCategories.Count == 1)
-            {
-                ApplyHexCategory(hexes, enabledCategories[0]);
-            }
-        }
-        else
-        {
-            // 3+ players: 1 from each enabled category
-            foreach (int cat in enabledCategories)
-            {
-                ApplyHexCategory(hexes, cat);
-            }
-        }
+        // Always roll one hex per enabled category
+        if (cfg.EnableFlashyHexes) hexes.Flashy = RollFlashyHex();
+        if (cfg.EnableModifierHexes) hexes.Modifier = RollModifierHex();
+        if (cfg.EnableConstraintHexes) hexes.Constraint = RollConstraintHex();
 
         return hexes;
-    }
-
-    private static void ApplyHexCategory(ActiveHexes hexes, int category)
-    {
-        switch (category)
-        {
-            case 0:
-                hexes.Flashy = RollFlashyHex();
-                break;
-            case 1:
-                hexes.Modifier = RollModifierHex();
-                break;
-            case 2:
-                hexes.Constraint = RollConstraintHex();
-                break;
-        }
     }
 
     private static int CountActivePlayers()
