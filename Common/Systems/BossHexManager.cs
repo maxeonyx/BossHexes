@@ -42,13 +42,14 @@ namespace BossHexes.Common.Systems;
  * 
  * TimeLimit - NEEDS TUNING
  *   - Currently: Flat 3 minutes for all bosses
- *   - TODO: Get real DPS estimates by boss tier, based on gear available before that boss
- *   - TODO: Calculate per-boss time limits from HP / expected DPS
+ *   - TODO: Get real DPS estimates by boss tier based on gear realistically available before that boss
+ *   - TODO: Calculate per-boss time limits from HP / expected pre-boss DPS, not a flat feel-based timer
  *   - TODO: Scale time with player count and difficulty mode (Expert/Master)
- *   - TODO: Extend time if Pacifist Healer hex is active (one less damage dealer)
- *   - TODO: Hex conflict prevention - if the best pre-boss gear relies on a specific
+ *   - TODO: Adjust the time limit based on the other active hexes, especially damage-denial or DPS-reducing combinations
+ *   - TODO: Hex conflict prevention - if the best realistic pre-boss gear relies on a specific
  *     damage type (e.g. Daedalus Stormbow for Destroyer = ranged), don't roll
- *     TimeLimit + NoRangedDamage together. Need a conflict matrix.
+ *     TimeLimit together with a hex that invalidates that route unless the timer math already accounts for it.
+ *   - NOTE: This may be too hard/noisy for BossHexes and could become its own mod or be cut entirely.
  * 
  * Reversal - NOT IMPLEMENTED
  *   - Left/right movement keys are swapped
