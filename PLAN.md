@@ -29,6 +29,7 @@
 - `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.
 - `GlassCannon` — implemented. Boss damage taken is handled in boss-side hit hooks; player damage taken is handled in player-side hit hooks keyed to the actual attacking boss NPC or projectile, so overlapping fights do not leak the damage-taken bonus across bosses. Hostile projectiles are attributed to the boss fight via explicit projectile source tracking at spawn time rather than projectile-type guesses.
 - `Marked` — implemented. Boss outgoing damage now uses the actual attacking NPC or projectile as the source of truth, so the +25% player-damage bonus only applies to attacks from the boss fight that actually rolled `Marked`.
+- `ManaDrain` — implemented. Mana cost changes belong on the player side, so it now uses `ModPlayer.ModifyManaCost(...)` as a fight-wide debuff keyed to active modifier state. It applies once when any active boss fight has `ManaDrain`, rather than trying to guess which boss a spell was "for".
 
 #### Rollable constraint hexes
 

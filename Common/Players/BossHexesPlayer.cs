@@ -58,6 +58,14 @@ public sealed class BossHexesPlayer : ModPlayer
         }
     }
 
+    public override void ModifyManaCost(Item item, ref float reduce, ref float mult)
+    {
+        if (!ShouldApplyManaDrain(item))
+            return;
+
+        mult *= 1.5f;
+    }
+
     public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
     {
         // When a player joins, sync the current hex state to them
@@ -178,7 +186,6 @@ public sealed class BossHexesPlayer : ModPlayer
                 
             // TODO: Implement remaining modifiers:
             // - ExtraPotionSickness: needs hook in potion consumption
-            // - ManaDrain: modify mana costs
             // - Inaccurate: spread projectiles
             // - SwiftBoss: handled in BossHexGlobalNPC
         }
@@ -254,6 +261,15 @@ public sealed class BossHexesPlayer : ModPlayer
             return false;
 
         return BossHexManager.IsModifierActive(ModifierHex.Frail);
+    }
+
+    private static bool ShouldApplyManaDrain(Item item)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return item.mana > 0 && BossHexManager.IsModifierActive(ModifierHex.ManaDrain);
     }
 
     private void ApplyConstraintHex(ConstraintHex hex)

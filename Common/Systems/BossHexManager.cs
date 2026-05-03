@@ -70,7 +70,7 @@ namespace BossHexes.Common.Systems;
  * Apply as a 2-tick debuff every frame for "permanent" effect during boss fight.
  * 
  * Already using buffs: Sluggish (Slow), BrokenArmor
- * Need to check: Frail (is there a built-in?), SlowAttack, ManaDrain, etc.
+ * Need to check: SlowAttack, ExtraPotionSickness, etc.
  * 
  * ExtraPotionSickness - 3x potion sickness duration
  *   - When player uses a healing potion, multiply the PotionSickness debuff duration by 3
@@ -82,10 +82,10 @@ namespace BossHexes.Common.Systems;
  *   - Hook: ModifyWeaponSpeed or similar
  *   - Affects all weapon types (melee swing, ranged fire rate, spell cast)
  * 
- * ManaDrain - Mana costs +50%
- *   - All mana costs increased by 50%
- *   - Hook: ModifyManaCost
- *   - Makes mage builds more challenging, need to manage mana carefully
+ * ManaDrain - IMPLEMENTED
+ *   - Uses ModPlayer.ModifyManaCost on the player side
+ *   - Treats ManaDrain as a fight-wide player debuff keyed to active modifier state
+ *   - Applies once when any active boss fight has ManaDrain
  * 
  * Inaccurate - Ranged spread increased
  *   - Add random spread/deviation to all ranged projectiles
@@ -464,7 +464,8 @@ public static class BossHexManager
         ModifierHex.BrokenArmor,
         ModifierHex.GlassCannon,
         ModifierHex.Marked,
-        // NOT implemented: ExtraPotionSickness, SlowAttack, ManaDrain, Inaccurate
+        ModifierHex.ManaDrain,
+        // NOT implemented: ExtraPotionSickness, SlowAttack, Inaccurate
     };
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]
