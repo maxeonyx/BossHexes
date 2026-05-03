@@ -48,11 +48,10 @@ namespace BossHexes.Common.Systems;
  *     TimeLimit together with a hex that invalidates that route unless the timer math already accounts for it.
  *   - NOTE: This may be too hard/noisy for BossHexes and could become its own mod or be cut entirely.
  * 
- * Reversal - NOT IMPLEMENTED
- *   - Left/right movement keys are swapped
- *   - Possibly up/down too (jump vs down)
- *   - Should feel disorienting but learnable
- *   - Hook: ModifyPlayer input or velocity manipulation in PostUpdate
+ * Reversal - IMPLEMENTED
+ *   - Uses ModPlayer.SetControls() on the owning player
+ *   - Swaps left/right movement input only
+ *   - Leaves up/down, jump, and mount semantics alone until there is a clearer principled design
  * 
  * Mirrored - Damaging clone spawns
  *   - Spawn a "shadow" copy of the boss that mirrors its movements
@@ -448,11 +447,12 @@ public static class BossHexManager
         FlashyHex.WingClip,
         FlashyHex.Blackout,
         // FlashyHex.TimeLimit,  // DISABLED: Needs per-boss tuning, currently impossible for some bosses
+        FlashyHex.Reversal,
         FlashyHex.TinyFastBoss,
         FlashyHex.HugeBoss,
         FlashyHex.UnstableGravity,
         FlashyHex.MeteorShower,
-        // NOT implemented: Reversal, Mirrored
+        // NOT implemented: Mirrored
     };
 
     private static readonly ModifierHex[] ImplementedModifierHexes = new[]

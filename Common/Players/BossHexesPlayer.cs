@@ -122,10 +122,13 @@ public sealed class BossHexesPlayer : ModPlayer
 
     public override void SetControls()
     {
-        if (!ShouldApplyGrounded())
-            return;
+        if (ShouldApplyReversal() && HasPlayerMovementAuthority(Player))
+        {
+            (Player.controlLeft, Player.controlRight) = (Player.controlRight, Player.controlLeft);
+        }
 
-        Player.controlJump = false;
+        if (ShouldApplyGrounded())
+            Player.controlJump = false;
     }
 
     public override void PostUpdate()
@@ -205,7 +208,10 @@ public sealed class BossHexesPlayer : ModPlayer
             // - InvisibleBoss: BossHexGlobalNPC.PreDraw
             // - TinyFastBoss/HugeBoss: BossHexGlobalNPC.PostAI
             // - TimeLimit/UnstableGravity/MeteorShower: BossHexesState
-            // - Reversal: TODO
+            case FlashyHex.Reversal:
+                // Handled in SetControls()
+                break;
+
             // - Mirrored: TODO
         }
     }
@@ -370,6 +376,15 @@ public sealed class BossHexesPlayer : ModPlayer
         return IsAttackItem(item)
             && item.CountsAsClass(DamageClass.Ranged)
             && BossHexManager.IsModifierActive(ModifierHex.Inaccurate);
+    }
+
+    private static bool ShouldApplyReversal()
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.IsFlashyActive(FlashyHex.Reversal);
     }
 
     private static bool HasPlayerStateAuthority(Player player)
