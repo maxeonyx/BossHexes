@@ -177,6 +177,9 @@ public class ActiveHexes
     public ModifierHex Modifier { get; set; } = ModifierHex.None;
     public ConstraintHex Constraint { get; set; } = ConstraintHex.None;
 
+    // Runtime-only authoritative root for the currently active shared fight.
+    public int ActiveRootWhoAmI { get; set; } = -1;
+
     // Runtime-only encounter identity for the currently active fight.
     public int EncounterId { get; set; } = 0;
     
@@ -211,6 +214,7 @@ public class ActiveHexes
         Flashy = FlashyHex.None;
         Modifier = ModifierHex.None;
         Constraint = ConstraintHex.None;
+        ActiveRootWhoAmI = -1;
         EncounterId = 0;
         TimeLimitTicks = 0;
         TimeLimitMaxTicks = 0;
@@ -273,6 +277,12 @@ public static class BossHexManager
 
         if (_activeHexesByBossType.ContainsKey(bossType))
         {
+            if (IsActiveFightOwnedByRoot(bossType, spawningBossRootWhoAmI))
+                return false;
+
+            if (TryAdoptActiveFightOwner(bossType, spawningBossRootWhoAmI))
+                return false;
+
             if (HasOtherActiveBossRootOfType(bossType, spawningBossRootWhoAmI))
                 return false;
 
@@ -283,7 +293,7 @@ public static class BossHexManager
         if (persistedHexes == null)
             return false;
 
-        var activeHexes = CreateActiveFightState(persistedHexes);
+        var activeHexes = CreateActiveFightState(persistedHexes, spawningBossRootWhoAmI);
         if (!activeHexes.HasAnyHex)
             return false;
 
@@ -320,7 +330,10 @@ public static class BossHexManager
     public static void OnBossDefeated(int bossType, int defeatedBossRootWhoAmI = -1)
     {
         if (HasOtherActiveBossRootOfType(bossType, defeatedBossRootWhoAmI))
+        {
+            TransferActiveFightOwner(bossType, defeatedBossRootWhoAmI);
             return;
+        }
 
         // Clear persistence - next time this boss is fought, re-roll
         _persistedHexes.Remove(bossType);
@@ -330,6 +343,13 @@ public static class BossHexManager
 
     public static bool HasOtherActiveBossRootOfType(int bossType, int excludeRootWhoAmI = -1)
     {
+        return TryGetActiveBossRootOfType(bossType, excludeRootWhoAmI, out _);
+    }
+
+    private static bool TryGetActiveBossRootOfType(int bossType, int excludeRootWhoAmI, out int rootWhoAmI)
+    {
+        rootWhoAmI = -1;
+
         for (int i = 0; i < Main.maxNPCs; i++)
         {
             var npc = Main.npc[i];
@@ -340,7 +360,10 @@ public static class BossHexManager
                 continue;
 
             if (root.whoAmI == i)
+            {
+                rootWhoAmI = root.whoAmI;
                 return true;
+            }
         }
 
         return false;
@@ -400,6 +423,12 @@ public static class BossHexManager
 
         if (TryGetActiveHexes(bossType, out hexes))
         {
+            if (hexes.ActiveRootWhoAmI == spawningBossRootWhoAmI)
+                return true;
+
+            if (TryAdoptActiveFightOwner(bossType, spawningBossRootWhoAmI))
+                return true;
+
             if (HasOtherActiveBossRootOfType(bossType, spawningBossRootWhoAmI))
                 return true;
 
@@ -537,8 +566,11 @@ public static class BossHexManager
     {
         var inactiveBossTypes = new List<int>();
 
-        foreach (var bossType in _activeHexesByBossType.Keys)
+        foreach (var (bossType, activeHexes) in _activeHexesByBossType)
         {
+            if (!IsBossRootStillActive(bossType, activeHexes.ActiveRootWhoAmI) && TransferActiveFightOwner(bossType, activeHexes.ActiveRootWhoAmI))
+                continue;
+
             if (!HasOtherActiveBossRootOfType(bossType))
                 inactiveBossTypes.Add(bossType);
         }
@@ -701,9 +733,10 @@ public static class BossHexManager
         }
     }
 
-    private static ActiveHexes CreateActiveFightState(ActiveHexes template)
+    private static ActiveHexes CreateActiveFightState(ActiveHexes template, int activeRootWhoAmI)
     {
         var activeHexes = template.CloneHexesOnly();
+        activeHexes.ActiveRootWhoAmI = activeRootWhoAmI;
         activeHexes.EncounterId = NextEncounterId();
 
         if (activeHexes.Flashy == FlashyHex.TimeLimit)
@@ -727,6 +760,51 @@ public static class BossHexManager
         }
 
         return activeHexes;
+    }
+
+    private static bool IsActiveFightOwnedByRoot(int bossType, int rootWhoAmI)
+    {
+        return rootWhoAmI >= 0
+            && _activeHexesByBossType.TryGetValue(bossType, out var activeHexes)
+            && activeHexes.ActiveRootWhoAmI == rootWhoAmI;
+    }
+
+    private static bool IsBossRootStillActive(int bossType, int rootWhoAmI)
+    {
+        if (rootWhoAmI < 0 || rootWhoAmI >= Main.maxNPCs)
+            return false;
+
+        var npc = Main.npc[rootWhoAmI];
+        return TryGetBossRoot(npc, out var root)
+            && root.whoAmI == rootWhoAmI
+            && root.type == bossType;
+    }
+
+    private static bool TransferActiveFightOwner(int bossType, int excludeRootWhoAmI)
+    {
+        if (!_activeHexesByBossType.TryGetValue(bossType, out var activeHexes))
+            return false;
+
+        if (!TryGetActiveBossRootOfType(bossType, excludeRootWhoAmI, out int replacementRootWhoAmI))
+            return false;
+
+        activeHexes.ActiveRootWhoAmI = replacementRootWhoAmI;
+        return true;
+    }
+
+    private static bool TryAdoptActiveFightOwner(int bossType, int replacementRootWhoAmI)
+    {
+        if (!_activeHexesByBossType.TryGetValue(bossType, out var activeHexes))
+            return false;
+
+        if (replacementRootWhoAmI < 0 || !IsBossRootStillActive(bossType, replacementRootWhoAmI))
+            return false;
+
+        if (IsBossRootStillActive(bossType, activeHexes.ActiveRootWhoAmI))
+            return false;
+
+        activeHexes.ActiveRootWhoAmI = replacementRootWhoAmI;
+        return true;
     }
 
     private static int NextEncounterId()
