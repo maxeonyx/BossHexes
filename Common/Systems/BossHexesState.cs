@@ -29,6 +29,12 @@ public sealed class BossHexesState : ModSystem
         _meteorControllers.Clear();
     }
 
+    public override void OnWorldUnload()
+    {
+        BossHexManager.OnWorldUnload();
+        _meteorControllers.Clear();
+    }
+
     public override void SaveWorldData(TagCompound tag)
     {
         BossHexManager.SaveWorldData(tag);

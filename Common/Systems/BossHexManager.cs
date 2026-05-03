@@ -264,9 +264,12 @@ public static class BossHexManager
 
     public static void OnWorldLoad()
     {
-        _persistedHexes.Clear();
-        _activeHexesByBossType.Clear();
-        _nextEncounterId = 1;
+        ClearWorldState();
+    }
+
+    public static void OnWorldUnload()
+    {
+        ClearWorldState();
     }
 
     public static bool OnBossSpawn(int bossType, int spawningBossRootWhoAmI = -1)
@@ -829,6 +832,13 @@ public static class BossHexManager
             _nextEncounterId = 1;
 
         return _nextEncounterId++;
+    }
+
+    private static void ClearWorldState()
+    {
+        _persistedHexes.Clear();
+        _activeHexesByBossType.Clear();
+        _nextEncounterId = 1;
     }
 
     /// <summary>
