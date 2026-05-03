@@ -17,13 +17,13 @@
 - `InvisibleBoss` — partial. Correct draw hook, but only hides the boss sprite; projectiles, dust, minimap presence, and worm segments still leak the boss.
 - `WingClip` — shaky. Zeroing `wingTime` / `rocketTime` hits the real flight resource, but it is still a per-tick suppression rather than a complete no-air-mobility rule.
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
-- `TinyFastBoss` / `HugeBoss` — shaky. Size changes are real, but the "fast" part is only velocity scaling, not attack cadence / AI timing, and worm segments are unaffected.
+- `TinyFastBoss` / `HugeBoss` — shaky. Size changes are real, but the "fast" part is only post-`VanillaAI` velocity nudging, not attack cadence / AI timing. The current effect only lerps 2% per tick toward a higher speed cap, so it is weaker and narrower than the hex text implies. Worm coverage is now handled by the root-aware current-fight check.
 - `UnstableGravity` — good. Server/world schedules flips and tells each client to mutate its own gravity, matching Terraria's authority split.
 - `MeteorShower` — implemented. Server-side spawning stays authoritative, and reduced boss damage now uses per-projectile MeteorShower provenance captured at spawn time instead of guessing from `ProjectileID.FallingStar`. Damage reduction is also scoped to the current boss fight rather than raw `target.boss`.
 
 #### Rollable modifier hexes
 
-- `SwiftBoss` — shaky. Same velocity-only problem as the flashy speed hexes; this is not a true 25% faster boss AI / attack rate change.
+- `SwiftBoss` — shaky. Same post-`VanillaAI` velocity-only approximation as the flashy speed hexes; this is not a true 25% faster boss AI / attack rate change. There does not currently seem to be a generic tModLoader hook for "run arbitrary vanilla boss AI faster," so a principled fix would likely require an explicit supported-boss / boss-family cadence audit rather than more generic velocity math.
 - `Sluggish` — shaky. Uses vanilla `Slow`, which is principled, but the exact player-facing effect is only approximately "movement -25%".
 - `Frail` — implemented. The max-life reduction now lives in `ModPlayer.ModifyMaxStats(...)`, which is the principled player-stat hook instead of rewriting `statLifeMax2` in `PostUpdate`.
 - `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.

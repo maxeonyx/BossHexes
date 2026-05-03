@@ -15,6 +15,7 @@ Guidance specific to the `BossHexes` mod.
 - Use `CountsAsClass(...)`, not raw `DamageType == ...`, so derived and custom classes behave correctly.
 - Be careful with Terraria authority boundaries: player state changes belong on the player side; world and boss state belong on the server/world side.
 - Worm and multi-segment bosses are a known architectural trap here. `npc.boss` usually only applies to the head, so boss-side effects often need segment-aware logic.
+- There does not currently seem to be a generic tModLoader hook for "run arbitrary vanilla boss AI / attack cadence faster". Generic speed hexes that only adjust `npc.velocity` after vanilla AI are approximations, not true cadence changes.
 
 ## Useful Resources
 
@@ -31,3 +32,6 @@ Guidance specific to the `BossHexes` mod.
 - tModLoader `GlobalProjectile` grapple hook reference (`CanUseGrapple`, `GrappleCanLatchOnTo`): https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalProjectile.cs
 - tModLoader `ProjectileLoader` grapple dispatch and hook combination semantics: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ProjectileLoader.cs
 - tModLoader ExampleMod grapple example showing the dedicated hook surface: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Tools/ExampleHook.cs
+- tModLoader `GlobalNPC` hook reference, especially `PreAI`, `AI`, and `PostAI`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalNPC.cs
+- tModLoader `NPCLoader` AI call order showing `VanillaAI()` before `GlobalNPC.AI(...)` / `PostAI(...)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/NPCLoader.cs
+- For true vanilla boss attack-cadence work, expect to read decompiled Terraria NPC AI source; there is not currently a generic tModLoader timing hook for arbitrary vanilla bosses.
