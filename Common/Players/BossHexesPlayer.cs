@@ -15,6 +15,17 @@ public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
 
+    public override void ModifyMaxStats(out StatModifier health, out StatModifier mana)
+    {
+        health = StatModifier.Default;
+        mana = StatModifier.Default;
+
+        if (ShouldApplyFrail())
+        {
+            health *= 0.8f;
+        }
+    }
+
     public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
     {
         // When a player joins, sync the current hex state to them
@@ -153,11 +164,6 @@ public sealed class BossHexesPlayer : ModPlayer
     {
         switch (hex)
         {
-            case ModifierHex.Frail:
-                // -20% max HP
-                Player.statLifeMax2 = (int)(Player.statLifeMax2 * 0.8f);
-                break;
-                
             case ModifierHex.BrokenArmor:
                 // Defense halved (apply Broken Armor debuff)
                 Player.AddBuff(BuffID.BrokenArmor, 2);
@@ -189,6 +195,16 @@ public sealed class BossHexesPlayer : ModPlayer
             return false;
 
         return BossHexManager.Current.Modifier == ModifierHex.GlassCannon
+            && BossHexManager.IsCurrentBossFightActive();
+    }
+
+    private static bool ShouldApplyFrail()
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.Current.Modifier == ModifierHex.Frail
             && BossHexManager.IsCurrentBossFightActive();
     }
 
