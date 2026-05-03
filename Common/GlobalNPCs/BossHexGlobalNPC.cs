@@ -161,6 +161,36 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             index = -1;
     }
 
+    public override bool? DrawHealthBar(NPC npc, byte hbPosition, ref float scale, ref Vector2 position)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return null;
+
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+            return null;
+
+        if (hexes.Flashy == FlashyHex.InvisibleBoss)
+            return false;
+
+        return null;
+    }
+
+    public override bool PreHoverInteract(NPC npc, bool mouseIntersects)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return true;
+
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+            return true;
+
+        if (hexes.Flashy == FlashyHex.InvisibleBoss)
+            return false;
+
+        return true;
+    }
+
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
     {
         if (!ShouldApplyHitEffects(npc, out var hexes))
