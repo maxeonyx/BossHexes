@@ -15,6 +15,26 @@ public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
 
+    public static bool ShouldBlockGrapple(Player player)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return player.active
+            && BossHexManager.Current.Constraint == ConstraintHex.NoGrapple
+            && BossHexManager.IsCurrentBossFightActive();
+    }
+
+    public void ShowNoGrappleDeniedMessage()
+    {
+        if (Main.myPlayer != Player.whoAmI || _denyUseTextCooldown > 0)
+            return;
+
+        Main.NewText("Grappling hooks are disabled by the No Grapple hex!", Color.Orange);
+        _denyUseTextCooldown = 60;
+    }
+
     public override void ModifyMaxStats(out StatModifier health, out StatModifier mana)
     {
         health = StatModifier.Default;
@@ -47,31 +67,6 @@ public sealed class BossHexesPlayer : ModPlayer
         ApplyBossHexes();
     }
 
-    public override bool CanUseItem(Item item)
-    {
-        var cfg = ModContent.GetInstance<BossHexesConfig>();
-        if (cfg == null || !cfg.EnableBossHexes)
-            return base.CanUseItem(item);
-
-        if (!BossHexManager.IsCurrentBossFightActive())
-            return base.CanUseItem(item);
-
-        var hexes = BossHexManager.Current;
-        
-        // NoGrapple constraint - block grappling hooks
-        if (hexes.Constraint == ConstraintHex.NoGrapple && IsGrapplingHook(item))
-        {
-            if (Main.myPlayer == Player.whoAmI && _denyUseTextCooldown <= 0)
-            {
-                Main.NewText("Grappling hooks are disabled by the No Grapple hex!", Color.Orange);
-                _denyUseTextCooldown = 60;
-            }
-            return false;
-        }
-
-        return base.CanUseItem(item);
-    }
-
     public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
     {
         if (!ShouldApplyGlassCannon() || !BossHexManager.IsPartOfCurrentBossFight(npc))
@@ -89,28 +84,6 @@ public sealed class BossHexesPlayer : ModPlayer
             return;
 
         modifiers.FinalDamage *= 1.5f;
-    }
-
-    /// <summary>
-    /// Check if an item is a grappling hook by checking if it shoots a grapple projectile.
-    /// </summary>
-    private static bool IsGrapplingHook(Item item)
-    {
-        if (item.shoot <= 0)
-            return false;
-        
-        // Check if the projectile has grapple AI (aiStyle 7)
-        try
-        {
-            var proj = new Projectile();
-            proj.SetDefaults(item.shoot);
-            return proj.aiStyle == 7; // Grapple AI
-        }
-        catch
-        {
-            // Defensive: if anything goes wrong, don't block the item
-            return false;
-        }
     }
 
     /// <summary>
@@ -225,12 +198,32 @@ public sealed class BossHexesPlayer : ModPlayer
                 break;
                 
             case ConstraintHex.NoGrapple:
-                // Handled separately in CanUseItem
+                ClearOwnedGrapples();
                 break;
                 
             // TODO: Implement remaining constraints:
             // - NoBuffPotions: check item use
             // - PacifistHealer: special role assignment
         }
+    }
+
+    private void ClearOwnedGrapples()
+    {
+        if (Main.myPlayer != Player.whoAmI)
+            return;
+
+        bool killedAny = false;
+
+        foreach (var projectile in Main.ActiveProjectiles)
+        {
+            if (projectile.owner != Player.whoAmI || !Main.projHook[projectile.type])
+                continue;
+
+            projectile.Kill();
+            killedAny = true;
+        }
+
+        if (killedAny)
+            ShowNoGrappleDeniedMessage();
     }
 }
