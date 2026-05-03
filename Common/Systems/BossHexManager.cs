@@ -328,8 +328,21 @@ public static class BossHexManager
         if (!npc.active)
             return false;
 
+        if (TryGetBossRealLifeRoot(npc, out var realLifeRoot))
+        {
+            root = realLifeRoot;
+            return true;
+        }
+
         if (npc.boss)
             return true;
+
+        return false;
+    }
+
+    private static bool TryGetBossRealLifeRoot(NPC npc, out NPC root)
+    {
+        root = npc;
 
         if (npc.realLife < 0 || npc.realLife >= Main.maxNPCs)
             return false;

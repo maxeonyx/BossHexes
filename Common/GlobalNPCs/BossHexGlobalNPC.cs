@@ -51,13 +51,16 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!npc.boss)
             return;
 
+        if (!BossHexManager.TryGetBossRoot(npc, out var root) || root.whoAmI != npc.whoAmI)
+            return;
+
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
         // Trigger hex rolling via the manager only where fight state is authoritative.
-        BossHexManager.OnBossSpawn(npc.type);
+        BossHexManager.OnBossSpawn(root.type);
 
-        if (!BossHexManager.TryGetActiveHexes(npc.type, out var hexes) || !hexes.HasAnyHex)
+        if (!BossHexManager.TryGetActiveHexes(root.type, out var hexes) || !hexes.HasAnyHex)
             return;
 
         // Sync hex state to all clients
@@ -375,6 +378,9 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!npc.boss)
             return;
 
+        if (!BossHexManager.TryGetBossRoot(npc, out var root) || root.whoAmI != npc.whoAmI)
+            return;
+
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return;
@@ -383,10 +389,10 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
-        bool clearedHexes = !BossHexManager.HasOtherActiveBossRootOfType(npc.type, npc.whoAmI);
+        bool clearedHexes = !BossHexManager.HasOtherActiveBossRootOfType(root.type, root.whoAmI);
 
         // Clear hex persistence for this boss type
-        BossHexManager.OnBossDefeated(npc.type, npc.whoAmI);
+        BossHexManager.OnBossDefeated(root.type, root.whoAmI);
 
         // Sync cleared state to clients
         if (Main.netMode == NetmodeID.Server)
