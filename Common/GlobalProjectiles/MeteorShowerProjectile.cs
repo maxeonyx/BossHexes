@@ -14,26 +14,50 @@ public sealed class MeteorShowerProjectile : GlobalProjectile
     public override bool InstancePerEntity => true;
 
     private int _sourceBossType = -1;
+    private int _sourceEncounterId = -1;
 
     public bool IsFromCurrentMeteorShower =>
         _sourceBossType >= 0 &&
-        BossHexManager.IsBossFightActive(_sourceBossType);
+        _sourceEncounterId >= 0 &&
+        BossHexManager.IsBossFightActive(_sourceBossType, _sourceEncounterId);
 
-    public void MarkAsMeteorShowerProjectile(int bossType)
+    public void MarkAsMeteorShowerProjectile(int bossType, int encounterId)
     {
         _sourceBossType = bossType;
+        _sourceEncounterId = encounterId;
     }
 
     public override void SendExtraAI(Projectile projectile, BitWriter bitWriter, BinaryWriter binaryWriter)
     {
-        bitWriter.WriteBit(_sourceBossType >= 0);
-        if (_sourceBossType >= 0)
+        bool hasSourceBossType = _sourceBossType >= 0;
+        bool hasSourceEncounterId = hasSourceBossType && _sourceEncounterId >= 0;
+
+        bitWriter.WriteBit(hasSourceBossType);
+        bitWriter.WriteBit(hasSourceEncounterId);
+
+        if (hasSourceBossType)
+        {
             binaryWriter.Write(_sourceBossType);
+
+            if (hasSourceEncounterId)
+                binaryWriter.Write(_sourceEncounterId);
+        }
     }
 
     public override void ReceiveExtraAI(Projectile projectile, BitReader bitReader, BinaryReader binaryReader)
     {
-        _sourceBossType = bitReader.ReadBit()
+        bool hasSourceBossType = bitReader.ReadBit();
+        bool hasSourceEncounterId = bitReader.ReadBit();
+
+        if (!hasSourceBossType)
+        {
+            _sourceBossType = -1;
+            _sourceEncounterId = -1;
+            return;
+        }
+
+        _sourceBossType = binaryReader.ReadInt32();
+        _sourceEncounterId = hasSourceEncounterId
             ? binaryReader.ReadInt32()
             : -1;
     }
@@ -43,7 +67,7 @@ public sealed class MeteorShowerProjectile : GlobalProjectile
         if (!IsFromCurrentMeteorShower)
             return;
 
-        if (!BossHexManager.IsPartOfBossFight(target, _sourceBossType))
+        if (!BossHexManager.IsPartOfBossFight(target, _sourceBossType, _sourceEncounterId))
             return;
 
         modifiers.FinalDamage *= 0.1f;

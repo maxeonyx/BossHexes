@@ -176,17 +176,20 @@ public sealed class BossHexesState : ModSystem
             // Meteor Shower - uses dedicated controller for clustered spawning
             if (hasWorldEffectAuthority && hexes.Flashy == FlashyHex.MeteorShower)
             {
-                GetMeteorController(bossType).Update();
+                GetMeteorController(bossType)?.Update();
             }
         }
     }
 
     private MeteorShowerController GetMeteorController(int bossType)
     {
-        if (_meteorControllers.TryGetValue(bossType, out var controller))
+        if (!BossHexManager.TryGetActiveHexes(bossType, out var hexes))
+            return null;
+
+        if (_meteorControllers.TryGetValue(bossType, out var controller) && controller.EncounterId == hexes.EncounterId)
             return controller;
 
-        controller = new MeteorShowerController(bossType);
+        controller = new MeteorShowerController(bossType, hexes.EncounterId);
         _meteorControllers[bossType] = controller;
         return controller;
     }

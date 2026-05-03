@@ -176,6 +176,9 @@ public class ActiveHexes
     public FlashyHex Flashy { get; set; } = FlashyHex.None;
     public ModifierHex Modifier { get; set; } = ModifierHex.None;
     public ConstraintHex Constraint { get; set; } = ConstraintHex.None;
+
+    // Runtime-only encounter identity for the currently active fight.
+    public int EncounterId { get; set; } = 0;
     
     // For time limit hex
     public int TimeLimitTicks { get; set; } = 0;
@@ -208,6 +211,7 @@ public class ActiveHexes
         Flashy = FlashyHex.None;
         Modifier = ModifierHex.None;
         Constraint = ConstraintHex.None;
+        EncounterId = 0;
         TimeLimitTicks = 0;
         TimeLimitMaxTicks = 0;
         GravityFlipTicks = 0;
@@ -250,12 +254,15 @@ public static class BossHexManager
     // Active hexes for currently alive boss fights, keyed by boss root type.
     private static readonly Dictionary<int, ActiveHexes> _activeHexesByBossType = new();
 
+    private static int _nextEncounterId = 1;
+
     public static bool HasAnyActiveHexes => _activeHexesByBossType.Count > 0;
 
     public static void OnWorldLoad()
     {
         _persistedHexes.Clear();
         _activeHexesByBossType.Clear();
+        _nextEncounterId = 1;
     }
 
     public static void OnBossSpawn(int bossType)
@@ -340,6 +347,14 @@ public static class BossHexManager
         return _activeHexesByBossType.TryGetValue(bossType, out hexes);
     }
 
+    public static bool TryGetActiveHexes(int bossType, int encounterId, out ActiveHexes hexes)
+    {
+        if (!_activeHexesByBossType.TryGetValue(bossType, out hexes))
+            return false;
+
+        return hexes.EncounterId == encounterId;
+    }
+
     public static bool TryGetActiveHexes(NPC npc, out ActiveHexes hexes)
     {
         hexes = null;
@@ -352,14 +367,24 @@ public static class BossHexManager
 
     public static bool TryGetActiveBossFight(NPC npc, out int bossType, out ActiveHexes hexes)
     {
+        return TryGetActiveBossFight(npc, out bossType, out _, out hexes);
+    }
+
+    public static bool TryGetActiveBossFight(NPC npc, out int bossType, out int encounterId, out ActiveHexes hexes)
+    {
         bossType = -1;
+        encounterId = -1;
         hexes = null;
 
         if (!TryGetBossRoot(npc, out var root))
             return false;
 
         bossType = root.type;
-        return TryGetActiveHexes(bossType, out hexes);
+        if (!TryGetActiveHexes(bossType, out hexes))
+            return false;
+
+        encounterId = hexes.EncounterId;
+        return true;
     }
 
     public static bool IsPartOfCurrentBossFight(NPC npc)
@@ -372,9 +397,22 @@ public static class BossHexManager
         return TryGetBossRoot(npc, out var root) && root.type == bossType;
     }
 
+    public static bool IsPartOfBossFight(NPC npc, int bossType, int encounterId)
+    {
+        return TryGetBossRoot(npc, out var root)
+            && root.type == bossType
+            && IsBossFightActive(bossType, encounterId);
+    }
+
     public static bool IsBossFightActive(int bossType)
     {
         return _activeHexesByBossType.ContainsKey(bossType) && HasOtherActiveBossRootOfType(bossType);
+    }
+
+    public static bool IsBossFightActive(int bossType, int encounterId)
+    {
+        return TryGetActiveHexes(bossType, encounterId, out _)
+            && HasOtherActiveBossRootOfType(bossType);
     }
 
     public static bool IsCurrentBossFightActive()
@@ -556,6 +594,7 @@ public static class BossHexManager
             packet.Write((byte)activeHexes.Flashy);
             packet.Write((byte)activeHexes.Modifier);
             packet.Write((byte)activeHexes.Constraint);
+            packet.Write(activeHexes.EncounterId);
             packet.Write(activeHexes.TimeLimitTicks);
             packet.Write(activeHexes.TimeLimitMaxTicks);
             packet.Write(activeHexes.PacifistHealerIndex);
@@ -580,6 +619,7 @@ public static class BossHexManager
                 Flashy = (FlashyHex)reader.ReadByte(),
                 Modifier = (ModifierHex)reader.ReadByte(),
                 Constraint = (ConstraintHex)reader.ReadByte(),
+                EncounterId = reader.ReadInt32(),
                 TimeLimitTicks = reader.ReadInt32(),
                 TimeLimitMaxTicks = reader.ReadInt32(),
                 PacifistHealerIndex = reader.ReadInt32(),
@@ -592,6 +632,7 @@ public static class BossHexManager
     private static ActiveHexes CreateActiveFightState(ActiveHexes template)
     {
         var activeHexes = template.CloneHexesOnly();
+        activeHexes.EncounterId = NextEncounterId();
 
         if (activeHexes.Flashy == FlashyHex.TimeLimit)
         {
@@ -614,6 +655,14 @@ public static class BossHexManager
         }
 
         return activeHexes;
+    }
+
+    private static int NextEncounterId()
+    {
+        if (_nextEncounterId <= 0)
+            _nextEncounterId = 1;
+
+        return _nextEncounterId++;
     }
 
     /// <summary>

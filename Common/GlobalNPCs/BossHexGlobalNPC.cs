@@ -30,14 +30,19 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     private int _originalWidth;
     private int _originalHeight;
     private int _sourceBossType = -1;
+    private int _sourceEncounterId = -1;
 
     public int SourceBossType => _sourceBossType;
+    public int SourceEncounterId => _sourceEncounterId;
 
     public override void OnSpawn(NPC npc, Terraria.DataStructures.IEntitySource source)
     {
-        _sourceBossType = ResolveSourceBossType(source);
-        if (_sourceBossType < 0 && TryResolveBossTypeFromNpcReferences(npc, out int referencedBossType))
+        (_sourceBossType, _sourceEncounterId) = ResolveSourceFight(source);
+        if (_sourceBossType < 0 && TryResolveFightFromNpcReferences(npc, out int referencedBossType, out int referencedEncounterId))
+        {
             _sourceBossType = referencedBossType;
+            _sourceEncounterId = referencedEncounterId;
+        }
 
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
@@ -102,14 +107,35 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void SendExtraAI(NPC npc, BitWriter bitWriter, BinaryWriter binaryWriter)
     {
-        bitWriter.WriteBit(_sourceBossType >= 0);
-        if (_sourceBossType >= 0)
+        bool hasSourceBossType = _sourceBossType >= 0;
+        bool hasSourceEncounterId = hasSourceBossType && _sourceEncounterId >= 0;
+
+        bitWriter.WriteBit(hasSourceBossType);
+        bitWriter.WriteBit(hasSourceEncounterId);
+
+        if (hasSourceBossType)
+        {
             binaryWriter.Write(_sourceBossType);
+
+            if (hasSourceEncounterId)
+                binaryWriter.Write(_sourceEncounterId);
+        }
     }
 
     public override void ReceiveExtraAI(NPC npc, BitReader bitReader, BinaryReader binaryReader)
     {
-        _sourceBossType = bitReader.ReadBit()
+        bool hasSourceBossType = bitReader.ReadBit();
+        bool hasSourceEncounterId = bitReader.ReadBit();
+
+        if (!hasSourceBossType)
+        {
+            _sourceBossType = -1;
+            _sourceEncounterId = -1;
+            return;
+        }
+
+        _sourceBossType = binaryReader.ReadInt32();
+        _sourceEncounterId = hasSourceEncounterId
             ? binaryReader.ReadInt32()
             : -1;
     }
@@ -381,36 +407,38 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             Main.NewText(clearMessage, Color.LimeGreen);
     }
 
-    private static int ResolveSourceBossType(IEntitySource source)
+    private static (int BossType, int EncounterId) ResolveSourceFight(IEntitySource source)
     {
-        if (TryGetSourceBossType(source, out int bossType))
-            return bossType;
+        if (TryGetSourceFight(source, out int bossType, out int encounterId))
+            return (bossType, encounterId);
 
-        if (source is IEntitySource_OnHit onHit && TryGetSourceBossType(onHit.Attacker, out bossType))
-            return bossType;
+        if (source is IEntitySource_OnHit onHit && TryGetSourceFight(onHit.Attacker, out bossType, out encounterId))
+            return (bossType, encounterId);
 
-        if (source is IEntitySource_OnHurt onHurt && TryGetSourceBossType(onHurt.Attacker, out bossType))
-            return bossType;
+        if (source is IEntitySource_OnHurt onHurt && TryGetSourceFight(onHurt.Attacker, out bossType, out encounterId))
+            return (bossType, encounterId);
 
-        return -1;
+        return (-1, -1);
     }
 
-    private static bool TryGetSourceBossType(IEntitySource source, out int bossType)
+    private static bool TryGetSourceFight(IEntitySource source, out int bossType, out int encounterId)
     {
         bossType = -1;
+        encounterId = -1;
 
         if (source is not EntitySource_Parent parent)
             return false;
 
-        return TryGetSourceBossType(parent.Entity, out bossType);
+        return TryGetSourceFight(parent.Entity, out bossType, out encounterId);
     }
 
-    private static bool TryGetSourceBossType(Entity entity, out int bossType)
+    private static bool TryGetSourceFight(Entity entity, out int bossType, out int encounterId)
     {
         bossType = -1;
+        encounterId = -1;
 
         if (entity is NPC npc)
-            return TryGetSourceBossType(npc, out bossType);
+            return TryGetSourceFight(npc, out bossType, out encounterId);
 
         if (entity is Projectile projectile)
         {
@@ -419,17 +447,19 @@ public sealed class BossHexGlobalNPC : GlobalNPC
                 return false;
 
             bossType = bossSource.SourceBossType;
+            encounterId = bossSource.SourceEncounterId;
             return true;
         }
 
         return false;
     }
 
-    private static bool TryGetSourceBossType(NPC npc, out int bossType)
+    private static bool TryGetSourceFight(NPC npc, out int bossType, out int encounterId)
     {
         bossType = -1;
+        encounterId = -1;
 
-        if (TryGetCurrentFightHexes(npc, out bossType, out _))
+        if (TryGetCurrentFightHexes(npc, out bossType, out encounterId, out _))
             return true;
 
         return false;
@@ -437,59 +467,73 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public static bool TryGetCurrentFightHexes(NPC npc, out int bossType, out ActiveHexes hexes)
     {
-        if (BossHexManager.TryGetActiveBossFight(npc, out bossType, out hexes))
+        return TryGetCurrentFightHexes(npc, out bossType, out _, out hexes);
+    }
+
+    public static bool TryGetCurrentFightHexes(NPC npc, out int bossType, out int encounterId, out ActiveHexes hexes)
+    {
+        if (BossHexManager.TryGetActiveBossFight(npc, out bossType, out encounterId, out hexes))
             return true;
 
-        return npc.GetGlobalNPC<BossHexGlobalNPC>().TryGetLinkedFightHexes(out bossType, out hexes);
+        return npc.GetGlobalNPC<BossHexGlobalNPC>().TryGetLinkedFightHexes(out bossType, out encounterId, out hexes);
     }
 
     public bool TryGetLinkedFightHexes(out int bossType, out ActiveHexes hexes)
     {
+        return TryGetLinkedFightHexes(out bossType, out _, out hexes);
+    }
+
+    public bool TryGetLinkedFightHexes(out int bossType, out int encounterId, out ActiveHexes hexes)
+    {
         bossType = -1;
+        encounterId = -1;
         hexes = null;
 
-        if (_sourceBossType < 0)
+        if (_sourceBossType < 0 || _sourceEncounterId < 0)
             return false;
 
-        if (!BossHexManager.IsBossFightActive(_sourceBossType))
+        if (!BossHexManager.IsBossFightActive(_sourceBossType, _sourceEncounterId))
             return false;
 
-        if (!BossHexManager.TryGetActiveHexes(_sourceBossType, out hexes))
+        if (!BossHexManager.TryGetActiveHexes(_sourceBossType, _sourceEncounterId, out hexes))
             return false;
 
         bossType = _sourceBossType;
+        encounterId = _sourceEncounterId;
         return true;
     }
 
-    private static bool TryResolveBossTypeFromNpcReferences(NPC npc, out int bossType)
+    private static bool TryResolveFightFromNpcReferences(NPC npc, out int bossType, out int encounterId)
     {
         bossType = -1;
+        encounterId = -1;
 
-        var candidateBossTypes = new HashSet<int>();
+        var candidateFights = new HashSet<(int BossType, int EncounterId)>();
 
-        TryAddReferencedBossType(candidateBossTypes, npc.realLife, npc.whoAmI);
+        TryAddReferencedFight(candidateFights, npc.realLife, npc.whoAmI);
 
         foreach (float aiValue in npc.ai)
         {
             if (!TryGetReferencedNpcIndexFromAi(aiValue, out int npcIndex))
                 continue;
 
-            TryAddReferencedBossType(candidateBossTypes, npcIndex, npc.whoAmI);
+            TryAddReferencedFight(candidateFights, npcIndex, npc.whoAmI);
         }
 
-        if (candidateBossTypes.Count != 1)
+        if (candidateFights.Count != 1)
             return false;
 
-        foreach (int candidateBossType in candidateBossTypes)
+        foreach (var candidateFight in candidateFights)
         {
-            bossType = candidateBossType;
+            bossType = candidateFight.BossType;
+            encounterId = candidateFight.EncounterId;
             return true;
         }
 
         return false;
     }
 
-    private static void TryAddReferencedBossType(HashSet<int> candidateBossTypes, int npcIndex, int selfIndex)
+    private static void TryAddReferencedFight(HashSet<(int BossType, int EncounterId)> candidateFights, int npcIndex, int selfIndex)
     {
         if (npcIndex < 0 || npcIndex >= Main.maxNPCs || npcIndex == selfIndex)
             return;
@@ -498,8 +542,8 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!referencedNpc.active)
             return;
 
-        if (TryGetSourceBossType(referencedNpc, out int bossType))
-            candidateBossTypes.Add(bossType);
+        if (TryGetSourceFight(referencedNpc, out int bossType, out int encounterId))
+            candidateFights.Add((bossType, encounterId));
     }
 
     private static bool TryGetReferencedNpcIndexFromAi(float aiValue, out int npcIndex)
