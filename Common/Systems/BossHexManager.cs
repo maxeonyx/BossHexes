@@ -419,13 +419,12 @@ public static class BossHexManager
 
     public static bool IsBossFightActive(int bossType)
     {
-        return _activeHexesByBossType.ContainsKey(bossType) && HasOtherActiveBossRootOfType(bossType);
+        return _activeHexesByBossType.ContainsKey(bossType);
     }
 
     public static bool IsBossFightActive(int bossType, int encounterId)
     {
-        return TryGetActiveHexes(bossType, encounterId, out _)
-            && HasOtherActiveBossRootOfType(bossType);
+        return TryGetActiveHexes(bossType, encounterId, out _);
     }
 
     public static bool IsCurrentBossFightActive()
@@ -483,7 +482,7 @@ public static class BossHexManager
 
         foreach (var bossType in _activeHexesByBossType.Keys)
         {
-            if (!IsBossFightActive(bossType))
+            if (!HasOtherActiveBossRootOfType(bossType))
                 inactiveBossTypes.Add(bossType);
         }
 
