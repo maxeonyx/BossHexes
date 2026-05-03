@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
+using BossHexes.Common.GlobalProjectiles;
 
 namespace BossHexes.Common.Systems;
 
@@ -178,8 +179,12 @@ public class MeteorShowerController
 
             if (projIdx >= 0 && projIdx < Main.maxProjectiles)
             {
-                Main.projectile[projIdx].hostile = true;
-                Main.projectile[projIdx].friendly = true;
+                var projectile = Main.projectile[projIdx];
+                projectile.hostile = true;
+                projectile.friendly = true;
+                projectile.GetGlobalProjectile<MeteorShowerProjectile>()
+                    .MarkAsMeteorShowerProjectile(BossHexManager.CurrentBossType);
+                projectile.netUpdate = true;
             }
         }
     }

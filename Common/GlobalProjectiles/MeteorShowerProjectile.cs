@@ -1,6 +1,7 @@
+using System.IO;
 using Terraria;
-using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 using BossHexes.Common.Systems;
 
 namespace BossHexes.Common.GlobalProjectiles;
@@ -10,23 +11,42 @@ namespace BossHexes.Common.GlobalProjectiles;
 /// </summary>
 public sealed class MeteorShowerProjectile : GlobalProjectile
 {
+    public override bool InstancePerEntity => true;
+
+    private int _sourceBossType = -1;
+
+    public bool IsFromCurrentMeteorShower =>
+        _sourceBossType >= 0 &&
+        BossHexManager.CurrentBossType >= 0 &&
+        _sourceBossType == BossHexManager.CurrentBossType;
+
+    public void MarkAsMeteorShowerProjectile(int bossType)
+    {
+        _sourceBossType = bossType;
+    }
+
+    public override void SendExtraAI(Projectile projectile, BitWriter bitWriter, BinaryWriter binaryWriter)
+    {
+        bitWriter.WriteBit(_sourceBossType >= 0);
+        if (_sourceBossType >= 0)
+            binaryWriter.Write(_sourceBossType);
+    }
+
+    public override void ReceiveExtraAI(Projectile projectile, BitReader bitReader, BinaryReader binaryReader)
+    {
+        _sourceBossType = bitReader.ReadBit()
+            ? binaryReader.ReadInt32()
+            : -1;
+    }
+
     public override void ModifyHitNPC(Projectile projectile, NPC target, ref NPC.HitModifiers modifiers)
     {
-        // Only affect falling stars during Meteor Shower hex
-        if (projectile.type != ProjectileID.FallingStar)
+        if (!IsFromCurrentMeteorShower)
             return;
 
-        // Check if Meteor Shower hex is active
-        var hexes = BossHexManager.Current;
-        if (hexes.Flashy != FlashyHex.MeteorShower)
+        if (!BossHexManager.IsPartOfCurrentBossFight(target))
             return;
 
-        // Only reduce damage to bosses - we want it to hurt players normally
-        if (target.boss)
-        {
-            // Meteors do minimal damage to bosses (about 1/10th)
-            // This is spectacle, not a free boss-killer
-            modifiers.FinalDamage *= 0.1f;
-        }
+        modifiers.FinalDamage *= 0.1f;
     }
 }

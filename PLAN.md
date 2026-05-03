@@ -19,7 +19,7 @@
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
 - `TinyFastBoss` / `HugeBoss` — shaky. Size changes are real, but the "fast" part is only velocity scaling, not attack cadence / AI timing, and worm segments are unaffected.
 - `UnstableGravity` — good. Server/world schedules flips and tells each client to mutate its own gravity, matching Terraria's authority split.
-- `MeteorShower` — shaky. Server-side spawning is right, but boss-damage reduction currently identifies hex meteors by `ProjectileID.FallingStar`, which is too broad a source of truth.
+- `MeteorShower` — implemented. Server-side spawning stays authoritative, and reduced boss damage now uses per-projectile MeteorShower provenance captured at spawn time instead of guessing from `ProjectileID.FallingStar`. Damage reduction is also scoped to the current boss fight rather than raw `target.boss`.
 
 #### Rollable modifier hexes
 
