@@ -70,11 +70,11 @@ namespace BossHexes.Common.Systems;
  * Apply as a 2-tick debuff every frame for "permanent" effect during boss fight.
  * 
  * Already using buffs: Sluggish (Slow), BrokenArmor
- * Need to check: SlowAttack, ExtraPotionSickness, etc.
+ * Need to check: SlowAttack, etc.
  * 
- * ExtraPotionSickness - 3x potion sickness duration
- *   - When player uses a healing potion, multiply the PotionSickness debuff duration by 3
- *   - Hook: OnConsumeMana or detect buff application and extend it
+ * ExtraPotionSickness - IMPLEMENTED
+ *   - Uses the actual Potion Sickness buff on the owning player as the source of truth
+ *   - Extends newly applied/refreshed Potion Sickness once, without retroactively stretching an existing timer when the fight starts
  *   - Should make potion timing much more critical
  * 
  * SlowAttack - Reduced attack speed
@@ -458,6 +458,7 @@ public static class BossHexManager
 
     private static readonly ModifierHex[] ImplementedModifierHexes = new[]
     {
+        ModifierHex.ExtraPotionSickness,
         ModifierHex.SwiftBoss,
         ModifierHex.Sluggish,
         ModifierHex.Frail,
@@ -465,7 +466,7 @@ public static class BossHexManager
         ModifierHex.GlassCannon,
         ModifierHex.Marked,
         ModifierHex.ManaDrain,
-        // NOT implemented: ExtraPotionSickness, SlowAttack, Inaccurate
+        // NOT implemented: SlowAttack, Inaccurate
     };
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]

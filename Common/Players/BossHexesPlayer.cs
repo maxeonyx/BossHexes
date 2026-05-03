@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -14,6 +15,7 @@ namespace BossHexes.Common.Players;
 public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
+    private int _lastPotionSicknessTime;
 
     private static bool HasPlayerMovementAuthority(Player player)
     {
@@ -64,6 +66,11 @@ public sealed class BossHexesPlayer : ModPlayer
             return;
 
         mult *= 1.5f;
+    }
+
+    public override void PostUpdateBuffs()
+    {
+        ApplyExtraPotionSickness();
     }
 
     public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
@@ -183,12 +190,45 @@ public sealed class BossHexesPlayer : ModPlayer
                 // Reduced attack speed (Slow debuff approximates this)
                 Player.AddBuff(BuffID.Slow, 2);
                 break;
-                
+
             // TODO: Implement remaining modifiers:
-            // - ExtraPotionSickness: needs hook in potion consumption
             // - Inaccurate: spread projectiles
             // - SwiftBoss: handled in BossHexGlobalNPC
         }
+    }
+
+    private void ApplyExtraPotionSickness()
+    {
+        int buffIndex = Player.FindBuffIndex(BuffID.PotionSickness);
+        if (buffIndex == -1)
+        {
+            _lastPotionSicknessTime = 0;
+            return;
+        }
+
+        int currentTime = Player.buffTime[buffIndex];
+        if (!HasPlayerStateAuthority(Player) || !ShouldApplyExtraPotionSickness())
+        {
+            _lastPotionSicknessTime = currentTime;
+            return;
+        }
+
+        if (ShouldExtendPotionSickness(currentTime))
+        {
+            long extendedTime = (long)currentTime * 3;
+            Player.buffTime[buffIndex] = (int)Math.Min(extendedTime, int.MaxValue);
+            currentTime = Player.buffTime[buffIndex];
+        }
+
+        _lastPotionSicknessTime = currentTime;
+    }
+
+    private bool ShouldExtendPotionSickness(int currentTime)
+    {
+        if (_lastPotionSicknessTime <= 0)
+            return true;
+
+        return currentTime > _lastPotionSicknessTime + 1;
     }
 
     private void ApplyWingClip()
@@ -270,6 +310,20 @@ public sealed class BossHexesPlayer : ModPlayer
             return false;
 
         return item.mana > 0 && BossHexManager.IsModifierActive(ModifierHex.ManaDrain);
+    }
+
+    private static bool HasPlayerStateAuthority(Player player)
+    {
+        return Main.netMode == NetmodeID.SinglePlayer || Main.myPlayer == player.whoAmI;
+    }
+
+    private static bool ShouldApplyExtraPotionSickness()
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.IsModifierActive(ModifierHex.ExtraPotionSickness);
     }
 
     private void ApplyConstraintHex(ConstraintHex hex)
