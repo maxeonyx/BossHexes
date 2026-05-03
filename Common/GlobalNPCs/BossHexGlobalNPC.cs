@@ -212,7 +212,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
     {
-        if (!ShouldApplyHitEffects(npc, out var hexes))
+        if (!ShouldApplyBossTargetHitEffects(npc, out var hexes))
             return;
 
         ApplyBossDamageTakenModifier(ref modifiers, hexes);
@@ -223,7 +223,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers)
     {
-        if (!ShouldApplyHitEffects(npc, out var hexes))
+        if (!ShouldApplyBossTargetHitEffects(npc, out var hexes))
             return;
 
         ApplyBossDamageTakenModifier(ref modifiers, hexes);
@@ -232,7 +232,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             modifiers.FinalDamage *= 0f;
     }
 
-    private static bool ShouldApplyHitEffects(NPC npc, out ActiveHexes hexes)
+    private static bool ShouldApplyBossTargetHitEffects(NPC npc, out ActiveHexes hexes)
     {
         hexes = null;
 
@@ -240,7 +240,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return TryGetCurrentFightHexes(npc, out _, out hexes);
+        return BossHexManager.TryGetActiveBossFight(npc, out _, out hexes);
     }
 
     private bool TryGetVisibilityHexes(NPC npc, out ActiveHexes hexes)
