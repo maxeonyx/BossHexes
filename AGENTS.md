@@ -7,6 +7,7 @@ Guidance specific to the `BossHexes` mod.
 - Use `C:\Users\maxeo\terraria-mods\deploy.ps1 -Mod BossHexes` when you need to sync this repo into tModLoader `ModSources` for local testing.
 - Steam Workshop publishing happens manually in tModLoader. The `deploy.ps1` script is only local source sync, not release.
 - Commit and push each logical change in this repo, then update the workspace repo submodule pin in `C:\Users\maxeo\terraria-mods`.
+- For this repo workflow, Max explicitly wants commit and push always, and to test all changes at the end rather than between logical changes.
 
 ## Architecture
 
@@ -21,3 +22,6 @@ Guidance specific to the `BossHexes` mod.
 - tModLoader projectile docs, especially `CountsAsClass(...)` and projectile data storage: https://github.com/tModLoader/tModLoader/wiki/Projectile-Class-Documentation
 - tModLoader ExampleMod max-stat example for principled player stat modification hooks: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/Players/ExampleStatIncreasePlayer.cs
 - tModLoader AI guide note on passing parent `whoAmI` through projectile `ai[]` when a projectile needs to remember its spawning NPC: https://github.com/tModLoader/tModLoader/wiki/Intermediate-Guide-to-AI
+- tModLoader entity source docs for attacker/victim-aware spawn attribution: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/DataStructures/EntitySource_OnHit.cs and https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/DataStructures/EntitySource_OnHurt.cs
+- tModLoader ExampleMod source-dependent projectile example showing `GlobalProjectile.OnSpawn(IEntitySource source)` with `EntitySource_Parent`: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/EntitySources/ExampleSourceDependentTweaks.cs
+- tModLoader ExampleMod projectile net-sync example showing per-projectile state via `SendExtraAI` / `ReceiveExtraAI`: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/GlobalProjectiles/ExampleProjectileNetSync.cs

@@ -27,7 +27,7 @@
 - `Sluggish` — shaky. Uses vanilla `Slow`, which is principled, but the exact player-facing effect is only approximately "movement -25%".
 - `Frail` — shaky. Numeric intent is right, but rewriting `statLifeMax2` in `PostUpdate` is a fragile hook.
 - `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.
-- `GlassCannon` — broken. Only the boss-takes-more-damage half exists; the player-takes-more-damage half is still missing.
+- `GlassCannon` — implemented. Boss damage taken is handled in boss-side hit hooks; player damage taken is handled in player-side hit hooks. Hostile projectiles are attributed to the boss fight via explicit projectile source tracking at spawn time rather than projectile-type guesses.
 
 #### Rollable constraint hexes
 

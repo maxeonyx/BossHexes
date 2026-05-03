@@ -3,6 +3,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using BossHexes.Common.Config;
+using BossHexes.Common.GlobalProjectiles;
 using BossHexes.Common.Systems;
 
 namespace BossHexes.Common.Players;
@@ -58,6 +59,25 @@ public sealed class BossHexesPlayer : ModPlayer
         }
 
         return base.CanUseItem(item);
+    }
+
+    public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
+    {
+        if (!ShouldApplyGlassCannon() || !BossHexManager.IsPartOfCurrentBossFight(npc))
+            return;
+
+        modifiers.FinalDamage *= 1.5f;
+    }
+
+    public override void ModifyHitByProjectile(Projectile proj, ref Player.HurtModifiers modifiers)
+    {
+        if (!ShouldApplyGlassCannon())
+            return;
+
+        if (!proj.GetGlobalProjectile<BossFightSourceProjectile>().IsFromCurrentBossFight)
+            return;
+
+        modifiers.FinalDamage *= 1.5f;
     }
 
     /// <summary>
@@ -157,10 +177,19 @@ public sealed class BossHexesPlayer : ModPlayer
             // - ExtraPotionSickness: needs hook in potion consumption
             // - ManaDrain: modify mana costs
             // - Inaccurate: spread projectiles
-            // - GlassCannon: damage modifier (partially in BossHexGlobalNPC)
             // - Marked: boss damage boost (in BossHexGlobalNPC)
             // - SwiftBoss: handled in BossHexGlobalNPC
         }
+    }
+
+    private static bool ShouldApplyGlassCannon()
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.Current.Modifier == ModifierHex.GlassCannon
+            && BossHexManager.IsCurrentBossFightActive();
     }
 
     private void ApplyConstraintHex(ConstraintHex hex)
