@@ -11,6 +11,7 @@
 - Damage-denial constraints now belong in boss-side hit hooks using the actual hitter as the source of truth: `ModifyHitByItem` + `item.CountsAsClass(...)` for direct hits, `ModifyHitByProjectile` + `projectile.CountsAsClass(...)` for projectile hits. Do not infer class from `Player.HeldItem` or raw `DamageType` equality.
 - Worm / multi-segment boss coverage now uses a principled root-aware fight check: resolve the boss root via `npc.boss` or `npc.realLife`, then match that root type against the active boss-fight registry. Boss-side visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints now apply to matching worm segments too.
 - Active fight tracking is now keyed by boss root type instead of a singleton `Current` / `CurrentBossType`. Boss-side matching, player-side fight-active checks, projectile provenance, and MeteorShower state now all route through that per-boss active-fight model, which is a better fit for overlap/despawn edge cases and multi-boss encounters.
+- Same-type overlap defeat cleanup now waits for the last active NPC in that boss root type. Killing one overlapping instance of a boss type no longer clears the shared active/persisted hex state out from under another still-active instance of the same type.
 
 #### Rollable flashy hexes
 

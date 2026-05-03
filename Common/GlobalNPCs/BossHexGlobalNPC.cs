@@ -358,14 +358,19 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
+        bool clearedHexes = !BossHexManager.HasOtherActiveBossRootOfType(npc.type, npc.whoAmI);
+
         // Clear hex persistence for this boss type
-        BossHexManager.OnBossDefeated(npc.type);
+        BossHexManager.OnBossDefeated(npc.type, npc.whoAmI);
 
         // Sync cleared state to clients
         if (Main.netMode == NetmodeID.Server)
         {
             BossHexManager.SendSync(Mod, -1, -1);
         }
+
+        if (!clearedHexes)
+            return;
 
         string clearMessage = BossHexManager.HasAnyActiveHexes
             ? "Boss defeated! Their hexes cleared."

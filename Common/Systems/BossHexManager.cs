@@ -279,12 +279,33 @@ public static class BossHexManager
         }
     }
 
-    public static void OnBossDefeated(int bossType)
+    public static void OnBossDefeated(int bossType, int defeatedBossRootWhoAmI = -1)
     {
+        if (HasOtherActiveBossRootOfType(bossType, defeatedBossRootWhoAmI))
+            return;
+
         // Clear persistence - next time this boss is fought, re-roll
         _persistedHexes.Remove(bossType);
 
         _activeHexesByBossType.Remove(bossType);
+    }
+
+    public static bool HasOtherActiveBossRootOfType(int bossType, int excludeRootWhoAmI = -1)
+    {
+        for (int i = 0; i < Main.maxNPCs; i++)
+        {
+            var npc = Main.npc[i];
+            if (!npc.active || !TryGetBossRoot(npc, out var root) || root.type != bossType)
+                continue;
+
+            if (root.whoAmI == excludeRootWhoAmI)
+                continue;
+
+            if (root.whoAmI == i)
+                return true;
+        }
+
+        return false;
     }
 
     public static void OnAllBossesDead()
@@ -353,17 +374,7 @@ public static class BossHexManager
 
     public static bool IsBossFightActive(int bossType)
     {
-        if (!_activeHexesByBossType.ContainsKey(bossType))
-            return false;
-
-        for (int i = 0; i < Main.maxNPCs; i++)
-        {
-            var npc = Main.npc[i];
-            if (npc.active && IsPartOfBossFight(npc, bossType))
-                return true;
-        }
-
-        return false;
+        return _activeHexesByBossType.ContainsKey(bossType) && HasOtherActiveBossRootOfType(bossType);
     }
 
     public static bool IsCurrentBossFightActive()
