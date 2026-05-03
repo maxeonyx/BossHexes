@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -33,6 +34,8 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     public override void OnSpawn(NPC npc, Terraria.DataStructures.IEntitySource source)
     {
         _sourceBossType = ResolveSourceBossType(source);
+        if (_sourceBossType < 0 && TryResolveBossTypeFromNpcReferences(npc, out int referencedBossType))
+            _sourceBossType = referencedBossType;
 
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
@@ -442,6 +445,68 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             return false;
 
         bossType = bossSource._sourceBossType;
+        return true;
+    }
+
+    private static bool TryResolveBossTypeFromNpcReferences(NPC npc, out int bossType)
+    {
+        bossType = -1;
+
+        var candidateBossTypes = new HashSet<int>();
+
+        TryAddReferencedBossType(candidateBossTypes, npc.realLife, npc.whoAmI);
+
+        foreach (float aiValue in npc.ai)
+        {
+            if (!TryGetReferencedNpcIndexFromAi(aiValue, out int npcIndex))
+                continue;
+
+            TryAddReferencedBossType(candidateBossTypes, npcIndex, npc.whoAmI);
+        }
+
+        if (candidateBossTypes.Count != 1)
+            return false;
+
+        foreach (int candidateBossType in candidateBossTypes)
+        {
+            bossType = candidateBossType;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static void TryAddReferencedBossType(HashSet<int> candidateBossTypes, int npcIndex, int selfIndex)
+    {
+        if (npcIndex < 0 || npcIndex >= Main.maxNPCs || npcIndex == selfIndex)
+            return;
+
+        NPC referencedNpc = Main.npc[npcIndex];
+        if (!referencedNpc.active)
+            return;
+
+        if (TryGetSourceBossType(referencedNpc, out int bossType))
+            candidateBossTypes.Add(bossType);
+    }
+
+    private static bool TryGetReferencedNpcIndexFromAi(float aiValue, out int npcIndex)
+    {
+        npcIndex = -1;
+
+        if (float.IsNaN(aiValue) || float.IsInfinity(aiValue))
+            return false;
+
+        if (Math.Abs(aiValue) < 0.001f)
+            return false;
+
+        int roundedIndex = (int)Math.Round(aiValue);
+        if (Math.Abs(aiValue - roundedIndex) > 0.001f)
+            return false;
+
+        if (roundedIndex < 0 || roundedIndex >= Main.maxNPCs)
+            return false;
+
+        npcIndex = roundedIndex;
         return true;
     }
 }

@@ -32,7 +32,7 @@ namespace BossHexes.Common.Systems;
  * InvisibleBoss - PARTIALLY IMPLEMENTED
  *   - Currently: Hides the boss sprite, boss-owned projectiles, boss-linked spawned NPCs, boss head / minimap icon, and boss UI bars / hover name surfaces
  *   - TODO: Hide dust/particles spawned by boss
- *   - TODO: Confirm coverage for linked entities that do not spawn with clean boss provenance
+ *   - TODO: Confirm coverage for linked entities that have neither clean spawn provenance nor explicit parent references
  * 
  * Blackout - REVIEWED / NEEDS TESTING
  *   - Uses vanilla Blackout on the player as the source of truth
