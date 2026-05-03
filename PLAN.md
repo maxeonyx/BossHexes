@@ -32,7 +32,7 @@
 #### Rollable constraint hexes
 
 - `NoRangedDamage` / `NoMeleeDamage` / `NoMagicDamage` — now principled in hook choice and hit classification, but still incomplete for worm / multi-segment bosses because those hits often land on NPCs without `boss=true`.
-- `Grounded` — shaky. It cancels obvious upward jump velocity, but it is still a heuristic rather than a true "cannot jump" implementation.
+- `Grounded` — implemented. Jump input is now blocked in `ModPlayer.SetControls()`, extra jumps are denied in `ModPlayer.CanStartExtraJump(...)`, and ongoing jump state is canceled via `Player.jump = 0` plus `Player.StopExtraJumpInProgress()` instead of zeroing upward velocity.
 - `NoGrapple` — implemented. New grapple attempts are now blocked in projectile grapple hooks (`CanUseGrapple`), in-flight hooks are prevented from latching via `GrappleCanLatchOnTo`, and already-active hooks are cleared from player state while the hex is active. Grapple classification now uses Terraria's `Main.projHook` source of truth instead of inferring from `aiStyle == 7`.
 
 ### Eater of Worlds hexes not appearing (reported, cause uncertain)

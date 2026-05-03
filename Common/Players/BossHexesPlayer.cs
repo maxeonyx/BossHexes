@@ -15,6 +15,16 @@ public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
 
+    private bool ShouldApplyGrounded()
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.Current.Constraint == ConstraintHex.Grounded
+            && BossHexManager.IsCurrentBossFightActive();
+    }
+
     public static bool ShouldBlockGrapple(Player player)
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
@@ -55,6 +65,14 @@ public sealed class BossHexesPlayer : ModPlayer
         }
     }
 
+    public override void SetControls()
+    {
+        if (!ShouldApplyGrounded())
+            return;
+
+        Player.controlJump = false;
+    }
+
     public override void PostUpdate()
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
@@ -84,6 +102,14 @@ public sealed class BossHexesPlayer : ModPlayer
             return;
 
         modifiers.FinalDamage *= 1.5f;
+    }
+
+    public override bool CanStartExtraJump(ExtraJump jump)
+    {
+        if (ShouldApplyGrounded())
+            return false;
+
+        return base.CanStartExtraJump(jump);
     }
 
     /// <summary>
@@ -186,15 +212,7 @@ public sealed class BossHexesPlayer : ModPlayer
         switch (hex)
         {
             case ConstraintHex.Grounded:
-                // No jumping - cancel any upward velocity from jumps
-                // We detect jump attempts and zero out
-                if (Player.velocity.Y < 0 && Player.controlJump)
-                {
-                    Player.velocity.Y = 0;
-                }
-                // Also disable rocket boots, cloud jumps, etc.
-                Player.jumpSpeedBoost = 0;
-                Player.jumpBoost = false;
+                CancelGroundedJumpState();
                 break;
                 
             case ConstraintHex.NoGrapple:
@@ -205,6 +223,15 @@ public sealed class BossHexesPlayer : ModPlayer
             // - NoBuffPotions: check item use
             // - PacifistHealer: special role assignment
         }
+    }
+
+    private void CancelGroundedJumpState()
+    {
+        if (Main.netMode != NetmodeID.SinglePlayer && Main.myPlayer != Player.whoAmI)
+            return;
+
+        Player.jump = 0;
+        Player.StopExtraJumpInProgress();
     }
 
     private void ClearOwnedGrapples()

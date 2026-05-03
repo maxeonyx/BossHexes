@@ -19,7 +19,10 @@ Guidance specific to the `BossHexes` mod.
 ## Useful Resources
 
 - tModLoader `ModPlayer` hooks reference, especially hit and hurt hooks: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ModPlayer.cs
+- tModLoader `ModPlayer` movement and jump-control hooks, especially `SetControls()` and `CanStartExtraJump(...)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ModPlayer.cs
 - tModLoader projectile docs, especially `CountsAsClass(...)` and projectile data storage: https://github.com/tModLoader/tModLoader/wiki/Projectile-Class-Documentation
+- tModLoader `Player` extra-jump API docs, especially `StopExtraJumpInProgress()` and `blockExtraJumps`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/Player.TML.cs
+- tModLoader `ExtraJump` docs, especially what counts as starting or canceling an extra jump: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ExtraJump.cs
 - tModLoader ExampleMod max-stat example for principled player stat modification hooks: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/Players/ExampleStatIncreasePlayer.cs
 - tModLoader AI guide note on passing parent `whoAmI` through projectile `ai[]` when a projectile needs to remember its spawning NPC: https://github.com/tModLoader/tModLoader/wiki/Intermediate-Guide-to-AI
 - tModLoader entity source docs for attacker/victim-aware spawn attribution: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/DataStructures/EntitySource_OnHit.cs and https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/DataStructures/EntitySource_OnHurt.cs
