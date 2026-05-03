@@ -12,6 +12,7 @@ Guidance specific to the `BossHexes` mod.
 ## Architecture
 
 - Prefer the principled source of truth for hit classification: for direct item hits, classify the `Item`; for projectile hits, classify the `Projectile`.
+- Prefer the principled source of truth for incoming boss damage too: for direct boss hits, use the actual attacking `NPC`; for projectile hits on the player, use projectile-carried boss-fight provenance captured at spawn time.
 - Use `CountsAsClass(...)`, not raw `DamageType == ...`, so derived and custom classes behave correctly.
 - Be careful with Terraria authority boundaries: player state changes belong on the player side; world and boss state belong on the server/world side.
 - Worm and multi-segment bosses are a known architectural trap here. `npc.boss` usually only applies to the head, so boss-side effects often need segment-aware logic.

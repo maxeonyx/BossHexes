@@ -9,7 +9,7 @@ using BossHexes.Common.Systems;
 namespace BossHexes.Common.GlobalProjectiles;
 
 /// <summary>
-/// Tracks whether a hostile projectile originated from the current boss fight.
+/// Tracks which active boss fight a hostile projectile originated from.
 /// </summary>
 public sealed class BossFightSourceProjectile : GlobalProjectile
 {
@@ -56,7 +56,7 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
         return !IsFromInvisibleBossFight;
     }
 
-    private bool TryGetSourceFightHexes(out ActiveHexes hexes)
+    public bool TryGetSourceFightHexes(out ActiveHexes hexes)
     {
         hexes = null;
 

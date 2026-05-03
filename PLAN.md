@@ -27,7 +27,8 @@
 - `Sluggish` — shaky. Uses vanilla `Slow`, which is principled, but the exact player-facing effect is only approximately "movement -25%".
 - `Frail` — implemented. The max-life reduction now lives in `ModPlayer.ModifyMaxStats(...)`, which is the principled player-stat hook instead of rewriting `statLifeMax2` in `PostUpdate`.
 - `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.
-- `GlassCannon` — implemented. Boss damage taken is handled in boss-side hit hooks; player damage taken is handled in player-side hit hooks. Hostile projectiles are attributed to the boss fight via explicit projectile source tracking at spawn time rather than projectile-type guesses.
+- `GlassCannon` — implemented. Boss damage taken is handled in boss-side hit hooks; player damage taken is handled in player-side hit hooks keyed to the actual attacking boss NPC or projectile, so overlapping fights do not leak the damage-taken bonus across bosses. Hostile projectiles are attributed to the boss fight via explicit projectile source tracking at spawn time rather than projectile-type guesses.
+- `Marked` — implemented. Boss outgoing damage now uses the actual attacking NPC or projectile as the source of truth, so the +25% player-damage bonus only applies to attacks from the boss fight that actually rolled `Marked`.
 
 #### Rollable constraint hexes
 

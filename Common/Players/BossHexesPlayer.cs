@@ -89,21 +89,18 @@ public sealed class BossHexesPlayer : ModPlayer
 
     public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
     {
-        if (!ShouldApplyGlassCannon() || !BossHexManager.IsPartOfCurrentBossFight(npc))
+        if (!ShouldApplyIncomingBossDamageModifiers(npc, out var hexes))
             return;
 
-        modifiers.FinalDamage *= 1.5f;
+        ApplyIncomingBossDamageModifiers(ref modifiers, hexes);
     }
 
     public override void ModifyHitByProjectile(Projectile proj, ref Player.HurtModifiers modifiers)
     {
-        if (!ShouldApplyGlassCannon())
+        if (!ShouldApplyIncomingBossDamageModifiers(proj, out var hexes))
             return;
 
-        if (!proj.GetGlobalProjectile<BossFightSourceProjectile>().IsFromCurrentBossFight)
-            return;
-
-        modifiers.FinalDamage *= 1.5f;
+        ApplyIncomingBossDamageModifiers(ref modifiers, hexes);
     }
 
     public override bool CanStartExtraJump(ExtraJump jump)
@@ -183,7 +180,6 @@ public sealed class BossHexesPlayer : ModPlayer
             // - ExtraPotionSickness: needs hook in potion consumption
             // - ManaDrain: modify mana costs
             // - Inaccurate: spread projectiles
-            // - Marked: boss damage boost (in BossHexGlobalNPC)
             // - SwiftBoss: handled in BossHexGlobalNPC
         }
     }
@@ -220,13 +216,35 @@ public sealed class BossHexesPlayer : ModPlayer
         };
     }
 
-    private static bool ShouldApplyGlassCannon()
+    private static bool ShouldApplyIncomingBossDamageModifiers(NPC npc, out ActiveHexes hexes)
     {
+        hexes = null;
+
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.IsModifierActive(ModifierHex.GlassCannon);
+        return BossHexManager.TryGetActiveHexes(npc, out hexes);
+    }
+
+    private static bool ShouldApplyIncomingBossDamageModifiers(Projectile projectile, out ActiveHexes hexes)
+    {
+        hexes = null;
+
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return projectile.GetGlobalProjectile<BossFightSourceProjectile>().TryGetSourceFightHexes(out hexes);
+    }
+
+    private static void ApplyIncomingBossDamageModifiers(ref Player.HurtModifiers modifiers, ActiveHexes hexes)
+    {
+        if (hexes.Modifier == ModifierHex.GlassCannon)
+            modifiers.FinalDamage *= 1.5f;
+
+        if (hexes.Modifier == ModifierHex.Marked)
+            modifiers.FinalDamage *= 1.25f;
     }
 
     private static bool ShouldApplyFrail()

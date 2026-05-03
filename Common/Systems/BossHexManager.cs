@@ -94,9 +94,9 @@ namespace BossHexes.Common.Systems;
  *   - Makes precision shots unreliable
  * 
  * Marked - Boss deals +25% damage
- *   - All boss attacks deal 25% more damage to players
- *   - Hook: ModifyHitByNPC on the player, check if attacker is boss
- *   - Stacks with GlassCannon if both active? (probably not, different categories)
+ *   - IMPLEMENTED: Uses the actual attacking NPC / projectile as the source of truth
+ *   - Direct boss hits use ModPlayer.ModifyHitByNPC on the player
+ *   - Boss projectiles use boss-fight projectile provenance captured at spawn time
  * 
  * -----------------------------------------------------------------------------
  * 
@@ -463,7 +463,8 @@ public static class BossHexManager
         ModifierHex.Frail,
         ModifierHex.BrokenArmor,
         ModifierHex.GlassCannon,
-        // NOT implemented: ExtraPotionSickness, SlowAttack, ManaDrain, Inaccurate, Marked
+        ModifierHex.Marked,
+        // NOT implemented: ExtraPotionSickness, SlowAttack, ManaDrain, Inaccurate
     };
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]
