@@ -19,8 +19,8 @@ namespace BossHexes.Common.Systems;
  * 
  * Hexes needing testing:
  *   [ ] Blackout - does darkness actually work?
- *   [ ] TinyFastBoss - test across multiple bosses, is 1/3 size + 2x speed fun?
- *   [ ] HugeBoss - test across multiple bosses, is 2x size noticeable/fun?
+ *   [ ] TinyFastBoss - test across multiple bosses, is the 1/3 size + boosted movement version fun?
+ *   [ ] HugeBoss - test across multiple bosses, is the 3x size + boosted movement version noticeable/fun?
  *   [ ] UnstableGravity - does it feel right?
  *   [ ] MeteorShower - DONE, working well at 0.35 multiplier
  * 
@@ -138,8 +138,8 @@ public enum FlashyHex
     Blackout,           // Extreme darkness
     TimeLimit,          // 3 minutes or everyone dies
     Reversal,           // Inverted controls
-    TinyFastBoss,       // 1/3 size, 2x speed
-    HugeBoss,           // 3x size, 1.75x speed
+    TinyFastBoss,       // 1/3 size, boosted movement
+    HugeBoss,           // 3x size, boosted movement
     Mirrored,           // Damaging clone spawns
     UnstableGravity,    // Gravity flips periodically
     MeteorShower,       // Falling stars damage players
@@ -152,7 +152,7 @@ public enum ModifierHex
     SlowAttack,           // Reduced attack speed
     ManaDrain,            // Mana costs +50%
     Inaccurate,           // Ranged spread increased
-    SwiftBoss,            // Boss moves/attacks 25% faster
+    SwiftBoss,            // Boss movement is boosted
     Sluggish,             // Player movement -25%
     Frail,                // Max HP -20%
     BrokenArmor,          // Defense halved

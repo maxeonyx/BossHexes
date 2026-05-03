@@ -217,12 +217,12 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     private void ApplyBossFlashyEffects(NPC npc, ActiveHexes hexes)
     {
-        // TinyFastBoss: 2x speed (scale handled in OnSpawn)
+        // TinyFastBoss: boosted movement speed (scale handled in PostAI)
         if (hexes.Flashy == FlashyHex.TinyFastBoss)
         {
             ApplySpeedMultiplier(npc, 2f, 25f);
         }
-        // HugeBoss: 1.75x speed (scale handled in OnSpawn)
+        // HugeBoss: boosted movement speed (scale handled in PostAI)
         else if (hexes.Flashy == FlashyHex.HugeBoss)
         {
             ApplySpeedMultiplier(npc, 1.75f, 22f);
@@ -243,7 +243,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     private void ApplyBossModifierEffects(NPC npc, ActiveHexes hexes)
     {
-        // SwiftBoss: boss moves/attacks 25% faster
+        // SwiftBoss: boosted boss movement speed
         if (hexes.Modifier == ModifierHex.SwiftBoss)
         {
             float speedMult = 1.25f;

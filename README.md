@@ -12,11 +12,11 @@ When a boss spawns, one hex is randomly rolled from each enabled category:
 - **Blackout** — extreme darkness
 - **Unstable Gravity** — gravity flips periodically for all players
 - **Meteor Shower** — falling stars rain down and damage players
-- **Tiny Fast Boss** — 1/3 size, 2× speed
-- **Huge Boss** — 3× size, 1.75× speed
+- **Tiny Fast Boss** — 1/3 size with boosted movement
+- **Huge Boss** — 3× size with boosted movement
 
 **Modifier Hexes** — stat adjustments:
-- **Swift Boss** — boss moves and attacks 25% faster
+- **Swift Boss** — boss movement is boosted
 - **Sluggish** — player movement −25%
 - **Frail** — max HP −20%
 - **Broken Armor** — defense halved
