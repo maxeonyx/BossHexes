@@ -52,14 +52,25 @@ public sealed class BossHexesState : ModSystem
     private void UpdateBossHexes()
     {
         bool hasWorldEffectAuthority = HasWorldEffectAuthority();
+        List<KeyValuePair<int, ActiveHexes>> activatedMissingFights = hasWorldEffectAuthority
+            ? BossHexManager.ActivateMissingBossFights()
+            : null;
         bool removedInactiveFights = hasWorldEffectAuthority && BossHexManager.ReconcileActiveBossFights();
         bool anyBossAlive = AnyBossAlive();
-        
-        if (anyBossAlive && !_wasAnyBossAlive)
+        bool activatedAnyMissingFight = activatedMissingFights?.Count > 0;
+         
+        if (activatedAnyMissingFight)
         {
-            // Boss just spawned - this is handled by GlobalNPC.OnSpawn
+            if (Main.netMode == NetmodeID.Server)
+                BossHexManager.SendSync(Mod, -1, -1);
+
+            foreach (var (_, hexes) in activatedMissingFights)
+            {
+                AnnounceActivatedFight(hexes);
+            }
         }
-        else if (_wasAnyBossAlive && !anyBossAlive)
+
+        if (_wasAnyBossAlive && !anyBossAlive)
         {
             // All bosses gone - could be defeat (handled by OnKill) or despawn/player death
             // Don't clear hexes here - OnKill handles actual defeats
@@ -241,6 +252,48 @@ public sealed class BossHexesState : ModSystem
             ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(message), c);
         else if (Main.netMode != NetmodeID.MultiplayerClient)
             Main.NewText(message, c);
+    }
+
+    public static void AnnounceActivatedFight(ActiveHexes hexes)
+    {
+        if (hexes == null || !hexes.HasAnyHex)
+            return;
+
+        var hexNames = hexes.GetActiveHexNames();
+        if (hexNames.Count == 0)
+            return;
+
+        string hexList = string.Join(", ", hexNames);
+        string message = hexNames.Count == 1
+            ? $"Boss Hex: {hexList}"
+            : $"Boss Hexes: {hexList}";
+
+        if (Main.netMode == NetmodeID.Server)
+            ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(message), Color.Orange);
+        else if (Main.netMode != NetmodeID.MultiplayerClient)
+            Main.NewText(message, Color.Orange);
+
+        if (hexes.Flashy == FlashyHex.TimeLimit)
+        {
+            const string timeMsg = "You have 3 minutes to defeat the boss!";
+            if (Main.netMode == NetmodeID.Server)
+                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(timeMsg), Color.Red);
+            else if (Main.netMode != NetmodeID.MultiplayerClient)
+                Main.NewText(timeMsg, Color.Red);
+        }
+
+        if (hexes.Constraint != ConstraintHex.PacifistHealer || hexes.PacifistHealerIndex < 0)
+            return;
+
+        var healer = Main.player[hexes.PacifistHealerIndex];
+        if (healer?.active != true)
+            return;
+
+        string healerMsg = $"{healer.name} is the Pacifist Healer! They cannot damage the boss but heal allies.";
+        if (Main.netMode == NetmodeID.Server)
+            ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(healerMsg), Color.LightGreen);
+        else if (Main.netMode != NetmodeID.MultiplayerClient)
+            Main.NewText(healerMsg, Color.LightGreen);
     }
 
     private static bool AnyBossAlive() => AnyBossAlive(out _);

@@ -62,52 +62,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!activatedFight)
             return;
 
-        if (!BossHexManager.TryGetActiveHexes(root.type, out var hexes) || !hexes.HasAnyHex)
-            return;
-
-        // Sync hex state to all clients
         if (Main.netMode == NetmodeID.Server)
-        {
             BossHexManager.SendSync(Mod, -1, -1);
-        }
 
-        // Announce all active hexes
-        var hexNames = hexes.GetActiveHexNames();
-        if (hexNames.Count == 0)
-            return;
-
-        string hexList = string.Join(", ", hexNames);
-        string message = hexNames.Count == 1
-            ? $"Boss Hex: {hexList}"
-            : $"Boss Hexes: {hexList}";
-
-        if (Main.netMode == NetmodeID.Server)
-            ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(message), Color.Orange);
-        else
-            Main.NewText(message, Color.Orange);
-
-        // Announce special conditions
-        if (hexes.Flashy == FlashyHex.TimeLimit)
-        {
-            string timeMsg = "You have 3 minutes to defeat the boss!";
-            if (Main.netMode == NetmodeID.Server)
-                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(timeMsg), Color.Red);
-            else
-                Main.NewText(timeMsg, Color.Red);
-        }
-
-        if (hexes.Constraint == ConstraintHex.PacifistHealer && hexes.PacifistHealerIndex >= 0)
-        {
-            var healer = Main.player[hexes.PacifistHealerIndex];
-            if (healer?.active == true)
-            {
-                string healerMsg = $"{healer.name} is the Pacifist Healer! They cannot damage the boss but heal allies.";
-                if (Main.netMode == NetmodeID.Server)
-                    ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(healerMsg), Color.LightGreen);
-                else
-                    Main.NewText(healerMsg, Color.LightGreen);
-            }
-        }
+        if (BossHexManager.TryGetActiveHexes(root.type, out var hexes))
+            BossHexesState.AnnounceActivatedFight(hexes);
     }
 
     public override void SendExtraAI(NPC npc, BitWriter bitWriter, BinaryWriter binaryWriter)

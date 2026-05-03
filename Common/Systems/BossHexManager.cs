@@ -287,6 +287,32 @@ public static class BossHexManager
         return true;
     }
 
+    public static List<KeyValuePair<int, ActiveHexes>> ActivateMissingBossFights()
+    {
+        var activatedFights = new List<KeyValuePair<int, ActiveHexes>>();
+        var seenBossTypes = new HashSet<int>();
+
+        for (int i = 0; i < Main.maxNPCs; i++)
+        {
+            var npc = Main.npc[i];
+            if (!TryGetBossRoot(npc, out var root) || root.whoAmI != npc.whoAmI)
+                continue;
+
+            if (!seenBossTypes.Add(root.type))
+                continue;
+
+            if (!OnBossSpawn(root.type))
+                continue;
+
+            if (!TryGetActiveHexes(root.type, out var activeHexes) || !activeHexes.HasAnyHex)
+                continue;
+
+            activatedFights.Add(new KeyValuePair<int, ActiveHexes>(root.type, activeHexes));
+        }
+
+        return activatedFights;
+    }
+
     public static void OnBossDefeated(int bossType, int defeatedBossRootWhoAmI = -1)
     {
         if (HasOtherActiveBossRootOfType(bossType, defeatedBossRootWhoAmI))
