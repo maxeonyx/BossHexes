@@ -49,10 +49,15 @@ public sealed class BossHexesState : ModSystem
 
     public bool TryEnsureActiveFight(int bossType, out int encounterId, out ActiveHexes hexes)
     {
+        return TryEnsureActiveFight(bossType, -1, out encounterId, out hexes);
+    }
+
+    public bool TryEnsureActiveFight(int bossType, int spawningBossRootWhoAmI, out int encounterId, out ActiveHexes hexes)
+    {
         encounterId = -1;
         hexes = null;
 
-        if (!BossHexManager.TryEnsureActiveHexes(bossType, out hexes, out bool activatedFight))
+        if (!BossHexManager.TryEnsureActiveHexes(bossType, spawningBossRootWhoAmI, out hexes, out bool activatedFight))
             return false;
 
         encounterId = hexes.EncounterId;

@@ -265,15 +265,19 @@ public static class BossHexManager
         _nextEncounterId = 1;
     }
 
-    public static bool OnBossSpawn(int bossType)
+    public static bool OnBossSpawn(int bossType, int spawningBossRootWhoAmI = -1)
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        // Already fighting this boss type
         if (_activeHexesByBossType.ContainsKey(bossType))
-            return false;
+        {
+            if (HasOtherActiveBossRootOfType(bossType, spawningBossRootWhoAmI))
+                return false;
+
+            _activeHexesByBossType.Remove(bossType);
+        }
 
         var persistedHexes = GetOrRollPersistedHexes(bossType, cfg);
         if (persistedHexes == null)
@@ -301,7 +305,7 @@ public static class BossHexManager
             if (!seenBossTypes.Add(root.type))
                 continue;
 
-            if (!TryEnsureActiveHexes(root.type, out var activeHexes, out bool activatedFight) || !activatedFight)
+            if (!TryEnsureActiveHexes(root.type, root.whoAmI, out var activeHexes, out bool activatedFight) || !activatedFight)
                 continue;
 
             if (!activeHexes.HasAnyHex)
@@ -383,6 +387,11 @@ public static class BossHexManager
 
     public static bool TryEnsureActiveHexes(int bossType, out ActiveHexes hexes, out bool activatedFight)
     {
+        return TryEnsureActiveHexes(bossType, -1, out hexes, out activatedFight);
+    }
+
+    public static bool TryEnsureActiveHexes(int bossType, int spawningBossRootWhoAmI, out ActiveHexes hexes, out bool activatedFight)
+    {
         activatedFight = false;
         hexes = null;
 
@@ -390,12 +399,18 @@ public static class BossHexManager
             return false;
 
         if (TryGetActiveHexes(bossType, out hexes))
-            return true;
+        {
+            if (HasOtherActiveBossRootOfType(bossType, spawningBossRootWhoAmI))
+                return true;
+
+            _activeHexesByBossType.Remove(bossType);
+            hexes = null;
+        }
 
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return false;
 
-        activatedFight = OnBossSpawn(bossType);
+        activatedFight = OnBossSpawn(bossType, spawningBossRootWhoAmI);
         if (!activatedFight)
             return false;
 

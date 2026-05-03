@@ -153,6 +153,6 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
             return false;
 
         bossType = root.type;
-        return ModContent.GetInstance<BossHexesState>().TryEnsureActiveFight(bossType, out encounterId, out _);
+        return ModContent.GetInstance<BossHexesState>().TryEnsureActiveFight(bossType, root.whoAmI, out encounterId, out _);
     }
 }
