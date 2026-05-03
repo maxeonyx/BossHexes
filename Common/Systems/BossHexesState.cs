@@ -15,7 +15,6 @@ namespace BossHexes.Common.Systems;
 /// </summary>
 public sealed class BossHexesState : ModSystem
 {
-    private bool _wasAnyBossAlive;
     private readonly Dictionary<int, MeteorShowerController> _meteorControllers = new();
 
     private static bool HasWorldEffectAuthority()
@@ -25,7 +24,6 @@ public sealed class BossHexesState : ModSystem
 
     public override void OnWorldLoad()
     {
-        _wasAnyBossAlive = AnyBossAlive();
         BossHexManager.OnWorldLoad();
         _meteorControllers.Clear();
     }
@@ -77,9 +75,8 @@ public sealed class BossHexesState : ModSystem
             ? BossHexManager.ActivateMissingBossFights()
             : null;
         bool removedInactiveFights = hasWorldEffectAuthority && BossHexManager.ReconcileActiveBossFights();
-        bool anyBossAlive = AnyBossAlive();
         bool activatedAnyMissingFight = activatedMissingFights?.Count > 0;
-         
+          
         if (activatedAnyMissingFight)
         {
             if (Main.netMode == NetmodeID.Server)
@@ -91,21 +88,7 @@ public sealed class BossHexesState : ModSystem
             }
         }
 
-        if (_wasAnyBossAlive && !anyBossAlive)
-        {
-            // All bosses gone - could be defeat (handled by OnKill) or despawn/player death
-            // Don't clear hexes here - OnKill handles actual defeats
-            // Just clear the current fight state so next spawn re-rolls if needed
-            if (hasWorldEffectAuthority)
-            {
-                BossHexManager.OnAllBossesDead();
-                _meteorControllers.Clear();
-
-                if (Main.netMode == NetmodeID.Server)
-                    BossHexManager.SendSync(Mod, -1, -1);
-            }
-        }
-        else if (removedInactiveFights)
+        if (removedInactiveFights)
         {
             ReconcileMeteorControllers();
 
@@ -115,8 +98,6 @@ public sealed class BossHexesState : ModSystem
 
         // Update active hex effects
         UpdateActiveHexEffects();
-
-        _wasAnyBossAlive = anyBossAlive;
     }
 
     private void UpdateActiveHexEffects()
@@ -315,22 +296,5 @@ public sealed class BossHexesState : ModSystem
             ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(healerMsg), Color.LightGreen);
         else if (Main.netMode != NetmodeID.MultiplayerClient)
             Main.NewText(healerMsg, Color.LightGreen);
-    }
-
-    private static bool AnyBossAlive() => AnyBossAlive(out _);
-
-    private static bool AnyBossAlive(out int bossType)
-    {
-        bossType = -1;
-        for (int i = 0; i < Main.maxNPCs; i++)
-        {
-            var n = Main.npc[i];
-            if (n.active && n.boss)
-            {
-                bossType = n.type;
-                return true;
-            }
-        }
-        return false;
     }
 }

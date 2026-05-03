@@ -342,12 +342,6 @@ public static class BossHexManager
         return false;
     }
 
-    public static void OnAllBossesDead()
-    {
-        // Just clear active fights, keep persistence
-        _activeHexesByBossType.Clear();
-    }
-
     public static bool TryGetBossRoot(NPC npc, out NPC root)
     {
         root = npc;
