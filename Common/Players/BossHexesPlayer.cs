@@ -41,7 +41,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return base.CanUseItem(item);
 
-        if (!AnyBossAlive())
+        if (!BossHexManager.IsCurrentBossFightActive())
             return base.CanUseItem(item);
 
         var hexes = BossHexManager.Current;
@@ -92,7 +92,7 @@ public sealed class BossHexesPlayer : ModPlayer
             return;
 
         // Only apply during active boss fights
-        if (!AnyBossAlive())
+        if (!BossHexManager.IsCurrentBossFightActive())
             return;
 
         // Apply flashy hexes (player-side effects)
@@ -187,16 +187,5 @@ public sealed class BossHexesPlayer : ModPlayer
             // - NoBuffPotions: check item use
             // - PacifistHealer: special role assignment
         }
-    }
-
-    private static bool AnyBossAlive()
-    {
-        for (int i = 0; i < Main.maxNPCs; i++)
-        {
-            var n = Main.npc[i];
-            if (n.active && n.boss)
-                return true;
-        }
-        return false;
     }
 }

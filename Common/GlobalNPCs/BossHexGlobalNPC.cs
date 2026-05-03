@@ -90,11 +90,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void AI(NPC npc)
     {
-        if (!npc.boss)
-            return;
-
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
+            return;
+
+        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
             return;
 
         var hexes = BossHexManager.Current;
@@ -108,11 +108,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void PostAI(NPC npc)
     {
-        if (!npc.boss)
-            return;
-
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
+            return;
+
+        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
             return;
 
         var hexes = BossHexManager.Current;
@@ -136,11 +136,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override bool PreDraw(NPC npc, Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
     {
-        if (!npc.boss)
-            return true;
-
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
+            return true;
+
+        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
             return true;
 
         var hexes = BossHexManager.Current;
@@ -180,14 +180,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     {
         hexes = BossHexManager.Current;
 
-        if (!npc.boss)
-            return false;
-
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return true;
+        return BossHexManager.IsPartOfCurrentBossFight(npc);
     }
 
     private static void ApplyBossDamageTakenModifier(ref NPC.HitModifiers modifiers, ActiveHexes hexes)

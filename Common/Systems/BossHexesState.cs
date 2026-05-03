@@ -54,7 +54,7 @@ public sealed class BossHexesState : ModSystem
         if (anyBossAlive && !_wasAnyBossAlive)
         {
             // Boss just spawned - this is handled by GlobalNPC.OnSpawn
-            _lastBossType = bossType;
+            _lastBossType = BossHexManager.CurrentBossType >= 0 ? BossHexManager.CurrentBossType : bossType;
             // Reset meteor controller for fresh engagement curve
             _meteorController.Reset();
         }
@@ -67,7 +67,7 @@ public sealed class BossHexesState : ModSystem
         }
 
         // Update active hex effects
-        if (anyBossAlive && BossHexManager.Current.HasAnyHex)
+        if (BossHexManager.IsCurrentBossFightActive() && BossHexManager.Current.HasAnyHex)
         {
             UpdateActiveHexEffects();
         }

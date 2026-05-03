@@ -322,6 +322,50 @@ public static class BossHexManager
         CurrentBossType = -1;
     }
 
+    public static bool TryGetBossRoot(NPC npc, out NPC root)
+    {
+        root = npc;
+
+        if (!npc.active)
+            return false;
+
+        if (npc.boss)
+            return true;
+
+        if (npc.realLife < 0 || npc.realLife >= Main.maxNPCs)
+            return false;
+
+        var candidateRoot = Main.npc[npc.realLife];
+        if (!candidateRoot.active || !candidateRoot.boss)
+            return false;
+
+        root = candidateRoot;
+        return true;
+    }
+
+    public static bool IsPartOfCurrentBossFight(NPC npc)
+    {
+        if (CurrentBossType < 0)
+            return false;
+
+        return TryGetBossRoot(npc, out var root) && root.type == CurrentBossType;
+    }
+
+    public static bool IsCurrentBossFightActive()
+    {
+        if (CurrentBossType < 0)
+            return false;
+
+        for (int i = 0; i < Main.maxNPCs; i++)
+        {
+            var npc = Main.npc[i];
+            if (npc.active && IsPartOfCurrentBossFight(npc))
+                return true;
+        }
+
+        return false;
+    }
+
     private static readonly FlashyHex[] ImplementedFlashyHexes = new[]
     {
         FlashyHex.InvisibleBoss,

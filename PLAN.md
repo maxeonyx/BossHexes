@@ -9,7 +9,7 @@
 ### Hex architecture audit
 
 - Damage-denial constraints now belong in boss-side hit hooks using the actual hitter as the source of truth: `ModifyHitByItem` + `item.CountsAsClass(...)` for direct hits, `ModifyHitByProjectile` + `projectile.CountsAsClass(...)` for projectile hits. Do not infer class from `Player.HeldItem` or raw `DamageType` equality.
-- Cross-cutting issue: most boss-side hexes gate on `npc.boss`, so worm bosses like Eater of Worlds / Destroyer body and tail segments bypass visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints.
+- Worm / multi-segment boss coverage now uses a principled root-aware fight check: resolve the boss root via `npc.boss` or `npc.realLife`, then compare the root's type to `BossHexManager.CurrentBossType`. Boss-side visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints now apply to matching worm segments too.
 - Cross-cutting issue: `BossHexManager.Current` / `CurrentBossType` assume one active boss fight, which is shaky for multi-boss encounters and overlap/despawn edge cases.
 
 #### Rollable flashy hexes
@@ -56,13 +56,15 @@
 
 **Affected bosses:** Eater of Worlds (NPCID 13/14/15), Destroyer (134/135/136)
 
-**Problem:** All boss-side hex hooks (`AI`, `PostAI`, `PreDraw`, `ModifyHitByProjectile`, `ModifyHitByItem`, `OnKill`) gate on `npc.boss`. Only the head segment has `boss=true`. Body and tail segments are not affected by:
+**Previous problem:** Boss-side hex hooks used to gate on `npc.boss`. Only the head segment has `boss=true`. Body and tail segments used to miss:
 - InvisibleBoss (body/tail still visible)
 - TinyFastBoss / HugeBoss (body/tail normal size)
 - SwiftBoss (body/tail normal speed)
 - GlassCannon damage bonus (hits on body/tail don't get +50%)
 
-**Fix approach:** For worm bosses, check if the NPC is a known worm segment type (or follow the `ai[1]`/`ai[3]` chain to find the head) and apply effects to all segments. Could maintain a `HashSet<int>` of worm segment NPC types, or use a more generic "is related to current boss fight" check.
+**Current fix:** `BossHexManager.TryGetBossRoot(...)` resolves the boss root via `npc.boss` or `npc.realLife`, and `IsPartOfCurrentBossFight(...)` compares that root type to `CurrentBossType`. `BossHexGlobalNPC` now uses that helper for visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints.
+
+**Remaining limitation:** `CurrentBossType` still models only one boss head type at a time, so true multi-boss encounters and overlap/despawn edge cases are still architecturally shaky.
 
 Already noted in `BossHexManager.cs` TODO block (line 37-38 area).
 
