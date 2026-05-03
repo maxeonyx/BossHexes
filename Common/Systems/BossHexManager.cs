@@ -34,8 +34,9 @@ namespace BossHexes.Common.Systems;
  *   - TODO: Hide dust/particles spawned by boss
  *   - TODO: Confirm coverage for linked entities that do not spawn with clean boss provenance
  * 
- * Blackout - NEEDS TESTING
- *   - Verify it actually works and creates the intended darkness effect
+ * Blackout - REVIEWED / NEEDS TESTING
+ *   - Uses vanilla Blackout on the player as the source of truth
+ *   - Still needs gameplay verification for whether vanilla Blackout creates the intended darkness effect
  * 
  * TimeLimit - NEEDS TUNING
  *   - Currently: Flat 3 minutes for all bosses
