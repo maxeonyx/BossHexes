@@ -22,24 +22,8 @@ public sealed class BossHexes : Mod
         switch (msgType)
         {
             case MessageType.SyncHexes:
-                int bossType = reader.ReadInt32();
-                byte flashy = reader.ReadByte();
-                byte modifier = reader.ReadByte();
-                byte constraint = reader.ReadByte();
-                int timeLimitTicks = reader.ReadInt32();
-                int timeLimitMaxTicks = reader.ReadInt32();
-                int pacifistHealerIndex = reader.ReadInt32();
-
                 // Apply hex state locally
-                BossHexManager.ReceiveSync(
-                    bossType,
-                    (FlashyHex)flashy,
-                    (ModifierHex)modifier,
-                    (ConstraintHex)constraint,
-                    timeLimitTicks,
-                    timeLimitMaxTicks,
-                    pacifistHealerIndex
-                );
+                BossHexManager.ReceiveSync(reader);
 
                 // Server forwards to other clients
                 if (Main.netMode == NetmodeID.Server)

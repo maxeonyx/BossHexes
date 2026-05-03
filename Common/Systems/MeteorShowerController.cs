@@ -12,6 +12,8 @@ namespace BossHexes.Common.Systems;
 /// </summary>
 public class MeteorShowerController
 {
+    private readonly int _bossType;
+
     // Fight duration tracking
     private int _fightTicks = 0;
     
@@ -22,6 +24,11 @@ public class MeteorShowerController
     private int _nextWindowTick = 0;
     private const int WindowDurationTicks = 180; // 3 second windows
     
+    public MeteorShowerController(int bossType)
+    {
+        _bossType = bossType;
+    }
+
     public void Reset()
     {
         _fightTicks = 0;
@@ -183,7 +190,7 @@ public class MeteorShowerController
                 projectile.hostile = true;
                 projectile.friendly = true;
                 projectile.GetGlobalProjectile<MeteorShowerProjectile>()
-                    .MarkAsMeteorShowerProjectile(BossHexManager.CurrentBossType);
+                    .MarkAsMeteorShowerProjectile(_bossType);
                 projectile.netUpdate = true;
             }
         }

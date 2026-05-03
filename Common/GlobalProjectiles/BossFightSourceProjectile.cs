@@ -18,8 +18,7 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
 
     public bool IsFromCurrentBossFight =>
         _sourceBossType >= 0 &&
-        BossHexManager.CurrentBossType >= 0 &&
-        _sourceBossType == BossHexManager.CurrentBossType;
+        BossHexManager.IsBossFightActive(_sourceBossType);
 
     public override void OnSpawn(Projectile projectile, IEntitySource source)
     {
@@ -91,7 +90,7 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
         if (!BossHexManager.TryGetBossRoot(npc, out var root))
             return false;
 
-        if (root.type != BossHexManager.CurrentBossType)
+        if (!BossHexManager.IsBossFightActive(root.type))
             return false;
 
         bossType = root.type;

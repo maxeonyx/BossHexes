@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -197,6 +198,16 @@ public class ActiveHexes
 
     public bool HasAnyHex => Flashy != FlashyHex.None || Modifier != ModifierHex.None || Constraint != ConstraintHex.None;
 
+    public ActiveHexes CloneHexesOnly()
+    {
+        return new ActiveHexes
+        {
+            Flashy = Flashy,
+            Modifier = Modifier,
+            Constraint = Constraint,
+        };
+    }
+
     public void Clear()
     {
         Flashy = FlashyHex.None;
@@ -240,18 +251,16 @@ public static class BossHexManager
 {
     // Persisted hexes per boss type (by NPC type ID)
     private static readonly Dictionary<int, ActiveHexes> _persistedHexes = new();
-    
-    // Current active hexes for the ongoing fight
-    public static ActiveHexes Current { get; private set; } = new();
-    
-    // Track which boss type is currently being fought
-    public static int CurrentBossType { get; private set; } = -1;
+
+    // Active hexes for currently alive boss fights, keyed by boss root type.
+    private static readonly Dictionary<int, ActiveHexes> _activeHexesByBossType = new();
+
+    public static bool HasAnyActiveHexes => _activeHexesByBossType.Count > 0;
 
     public static void OnWorldLoad()
     {
         _persistedHexes.Clear();
-        Current = new ActiveHexes();
-        CurrentBossType = -1;
+        _activeHexesByBossType.Clear();
     }
 
     public static void OnBossSpawn(int bossType)
@@ -261,65 +270,41 @@ public static class BossHexManager
             return;
 
         // Already fighting this boss type
-        if (CurrentBossType == bossType && Current.HasAnyHex)
+        if (_activeHexesByBossType.ContainsKey(bossType))
             return;
 
-        CurrentBossType = bossType;
+        ActiveHexes persistedHexes;
 
         // Check for persisted hexes for this boss
         if (_persistedHexes.TryGetValue(bossType, out var persisted))
         {
-            Current = persisted;
-            return;
+            persistedHexes = persisted;
+        }
+        else
+        {
+            persistedHexes = RollHexes(cfg).CloneHexesOnly();
+            _persistedHexes[bossType] = persistedHexes;
         }
 
-        // Roll new hexes
-        Current = RollHexes(cfg);
-        
-        // Set up time limit if rolled
-        if (Current.Flashy == FlashyHex.TimeLimit)
+        var activeHexes = CreateActiveFightState(persistedHexes);
+        if (activeHexes.HasAnyHex)
         {
-            Current.TimeLimitMaxTicks = 3 * 60 * 60; // 3 minutes
-            Current.TimeLimitTicks = Current.TimeLimitMaxTicks;
+            _activeHexesByBossType[bossType] = activeHexes;
         }
-        
-        // Set up pacifist healer if rolled
-        if (Current.Constraint == ConstraintHex.PacifistHealer && CountActivePlayers() > 1)
-        {
-            Current.PacifistHealerIndex = Main.rand.Next(Main.maxPlayers);
-            // Find a valid player
-            for (int i = 0; i < Main.maxPlayers; i++)
-            {
-                int idx = (Current.PacifistHealerIndex + i) % Main.maxPlayers;
-                if (Main.player[idx]?.active == true && !Main.player[idx].dead)
-                {
-                    Current.PacifistHealerIndex = idx;
-                    break;
-                }
-            }
-        }
-
-        // Persist for this boss type
-        _persistedHexes[bossType] = Current;
     }
 
     public static void OnBossDefeated(int bossType)
     {
         // Clear persistence - next time this boss is fought, re-roll
         _persistedHexes.Remove(bossType);
-        
-        if (CurrentBossType == bossType)
-        {
-            Current = new ActiveHexes();
-            CurrentBossType = -1;
-        }
+
+        _activeHexesByBossType.Remove(bossType);
     }
 
     public static void OnAllBossesDead()
     {
-        // Just clear current, keep persistence
-        Current = new ActiveHexes();
-        CurrentBossType = -1;
+        // Just clear active fights, keep persistence
+        _activeHexesByBossType.Clear();
     }
 
     public static bool TryGetBossRoot(NPC npc, out NPC root)
@@ -343,27 +328,123 @@ public static class BossHexManager
         return true;
     }
 
-    public static bool IsPartOfCurrentBossFight(NPC npc)
+    public static bool TryGetActiveHexes(int bossType, out ActiveHexes hexes)
     {
-        if (CurrentBossType < 0)
-            return false;
-
-        return TryGetBossRoot(npc, out var root) && root.type == CurrentBossType;
+        return _activeHexesByBossType.TryGetValue(bossType, out hexes);
     }
 
-    public static bool IsCurrentBossFightActive()
+    public static bool TryGetActiveHexes(NPC npc, out ActiveHexes hexes)
     {
-        if (CurrentBossType < 0)
+        hexes = null;
+
+        if (!TryGetBossRoot(npc, out var root))
+            return false;
+
+        return TryGetActiveHexes(root.type, out hexes);
+    }
+
+    public static bool TryGetActiveBossFight(NPC npc, out int bossType, out ActiveHexes hexes)
+    {
+        bossType = -1;
+        hexes = null;
+
+        if (!TryGetBossRoot(npc, out var root))
+            return false;
+
+        bossType = root.type;
+        return TryGetActiveHexes(bossType, out hexes);
+    }
+
+    public static bool IsPartOfCurrentBossFight(NPC npc)
+    {
+        return TryGetActiveHexes(npc, out _);
+    }
+
+    public static bool IsPartOfBossFight(NPC npc, int bossType)
+    {
+        return TryGetBossRoot(npc, out var root) && root.type == bossType;
+    }
+
+    public static bool IsBossFightActive(int bossType)
+    {
+        if (!_activeHexesByBossType.ContainsKey(bossType))
             return false;
 
         for (int i = 0; i < Main.maxNPCs; i++)
         {
             var npc = Main.npc[i];
-            if (npc.active && IsPartOfCurrentBossFight(npc))
+            if (npc.active && IsPartOfBossFight(npc, bossType))
                 return true;
         }
 
         return false;
+    }
+
+    public static bool IsCurrentBossFightActive()
+    {
+        foreach (var bossType in _activeHexesByBossType.Keys)
+        {
+            if (IsBossFightActive(bossType))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static bool IsFlashyActive(FlashyHex hex)
+    {
+        foreach (var (bossType, activeHexes) in _activeHexesByBossType)
+        {
+            if (activeHexes.Flashy == hex && IsBossFightActive(bossType))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static bool IsModifierActive(ModifierHex hex)
+    {
+        foreach (var (bossType, activeHexes) in _activeHexesByBossType)
+        {
+            if (activeHexes.Modifier == hex && IsBossFightActive(bossType))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static bool IsConstraintActive(ConstraintHex hex)
+    {
+        foreach (var (bossType, activeHexes) in _activeHexesByBossType)
+        {
+            if (activeHexes.Constraint == hex && IsBossFightActive(bossType))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static List<KeyValuePair<int, ActiveHexes>> GetActiveBossFights()
+    {
+        return new List<KeyValuePair<int, ActiveHexes>>(_activeHexesByBossType);
+    }
+
+    public static bool ReconcileActiveBossFights()
+    {
+        var inactiveBossTypes = new List<int>();
+
+        foreach (var bossType in _activeHexesByBossType.Keys)
+        {
+            if (!IsBossFightActive(bossType))
+                inactiveBossTypes.Add(bossType);
+        }
+
+        foreach (var bossType in inactiveBossTypes)
+        {
+            _activeHexesByBossType.Remove(bossType);
+        }
+
+        return inactiveBossTypes.Count > 0;
     }
 
     private static readonly FlashyHex[] ImplementedFlashyHexes = new[]
@@ -449,35 +530,72 @@ public static class BossHexManager
 
         ModPacket packet = mod.GetPacket();
         packet.Write((byte)BossHexes.MessageType.SyncHexes);
-        packet.Write(CurrentBossType);
-        packet.Write((byte)Current.Flashy);
-        packet.Write((byte)Current.Modifier);
-        packet.Write((byte)Current.Constraint);
-        packet.Write(Current.TimeLimitTicks);
-        packet.Write(Current.TimeLimitMaxTicks);
-        packet.Write(Current.PacifistHealerIndex);
+        packet.Write(_activeHexesByBossType.Count);
+
+        foreach (var (bossType, activeHexes) in _activeHexesByBossType)
+        {
+            packet.Write(bossType);
+            packet.Write((byte)activeHexes.Flashy);
+            packet.Write((byte)activeHexes.Modifier);
+            packet.Write((byte)activeHexes.Constraint);
+            packet.Write(activeHexes.TimeLimitTicks);
+            packet.Write(activeHexes.TimeLimitMaxTicks);
+            packet.Write(activeHexes.PacifistHealerIndex);
+        }
+
         packet.Send(toWho, ignoreClient);
     }
 
     /// <summary>
     /// Receive hex state from server. Called on clients.
     /// </summary>
-    public static void ReceiveSync(
-        int bossType,
-        FlashyHex flashy,
-        ModifierHex modifier,
-        ConstraintHex constraint,
-        int timeLimitTicks,
-        int timeLimitMaxTicks,
-        int pacifistHealerIndex)
+    public static void ReceiveSync(BinaryReader reader)
     {
-        CurrentBossType = bossType;
-        Current.Flashy = flashy;
-        Current.Modifier = modifier;
-        Current.Constraint = constraint;
-        Current.TimeLimitTicks = timeLimitTicks;
-        Current.TimeLimitMaxTicks = timeLimitMaxTicks;
-        Current.PacifistHealerIndex = pacifistHealerIndex;
+        _activeHexesByBossType.Clear();
+
+        int activeFightCount = reader.ReadInt32();
+        for (int i = 0; i < activeFightCount; i++)
+        {
+            int bossType = reader.ReadInt32();
+            var activeHexes = new ActiveHexes
+            {
+                Flashy = (FlashyHex)reader.ReadByte(),
+                Modifier = (ModifierHex)reader.ReadByte(),
+                Constraint = (ConstraintHex)reader.ReadByte(),
+                TimeLimitTicks = reader.ReadInt32(),
+                TimeLimitMaxTicks = reader.ReadInt32(),
+                PacifistHealerIndex = reader.ReadInt32(),
+            };
+
+            _activeHexesByBossType[bossType] = activeHexes;
+        }
+    }
+
+    private static ActiveHexes CreateActiveFightState(ActiveHexes template)
+    {
+        var activeHexes = template.CloneHexesOnly();
+
+        if (activeHexes.Flashy == FlashyHex.TimeLimit)
+        {
+            activeHexes.TimeLimitMaxTicks = 3 * 60 * 60; // 3 minutes
+            activeHexes.TimeLimitTicks = activeHexes.TimeLimitMaxTicks;
+        }
+
+        if (activeHexes.Constraint == ConstraintHex.PacifistHealer && CountActivePlayers() > 1)
+        {
+            activeHexes.PacifistHealerIndex = Main.rand.Next(Main.maxPlayers);
+            for (int i = 0; i < Main.maxPlayers; i++)
+            {
+                int idx = (activeHexes.PacifistHealerIndex + i) % Main.maxPlayers;
+                if (Main.player[idx]?.active == true && !Main.player[idx].dead)
+                {
+                    activeHexes.PacifistHealerIndex = idx;
+                    break;
+                }
+            }
+        }
+
+        return activeHexes;
     }
 
     /// <summary>

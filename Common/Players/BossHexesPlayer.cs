@@ -21,8 +21,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.Current.Constraint == ConstraintHex.Grounded
-            && BossHexManager.IsCurrentBossFightActive();
+        return BossHexManager.IsConstraintActive(ConstraintHex.Grounded);
     }
 
     public static bool ShouldBlockGrapple(Player player)
@@ -31,9 +30,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return player.active
-            && BossHexManager.Current.Constraint == ConstraintHex.NoGrapple
-            && BossHexManager.IsCurrentBossFightActive();
+        return player.active && BossHexManager.IsConstraintActive(ConstraintHex.NoGrapple);
     }
 
     public void ShowNoGrappleDeniedMessage()
@@ -59,7 +56,7 @@ public sealed class BossHexesPlayer : ModPlayer
     public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
     {
         // When a player joins, sync the current hex state to them
-        if (Main.netMode == NetmodeID.Server && BossHexManager.Current.HasAnyHex)
+        if (Main.netMode == NetmodeID.Server && BossHexManager.HasAnyActiveHexes)
         {
             BossHexManager.SendSync(Mod, toWho, fromWho);
         }
@@ -117,22 +114,23 @@ public sealed class BossHexesPlayer : ModPlayer
     /// </summary>
     private void ApplyBossHexes()
     {
-        var hexes = BossHexManager.Current;
-        if (!hexes.HasAnyHex)
-            return;
-
-        // Only apply during active boss fights
         if (!BossHexManager.IsCurrentBossFightActive())
             return;
 
-        // Apply flashy hexes (player-side effects)
-        ApplyFlashyHex(hexes.Flashy);
-        
-        // Apply modifier hexes
-        ApplyModifierHex(hexes.Modifier);
-        
-        // Apply constraint hexes
-        ApplyConstraintHex(hexes.Constraint);
+        foreach (var (bossType, hexes) in BossHexManager.GetActiveBossFights())
+        {
+            if (!BossHexManager.IsBossFightActive(bossType) || !hexes.HasAnyHex)
+                continue;
+
+            // Apply flashy hexes (player-side effects)
+            ApplyFlashyHex(hexes.Flashy);
+
+            // Apply modifier hexes
+            ApplyModifierHex(hexes.Modifier);
+
+            // Apply constraint hexes
+            ApplyConstraintHex(hexes.Constraint);
+        }
     }
 
     private void ApplyFlashyHex(FlashyHex hex)
@@ -193,8 +191,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.Current.Modifier == ModifierHex.GlassCannon
-            && BossHexManager.IsCurrentBossFightActive();
+        return BossHexManager.IsModifierActive(ModifierHex.GlassCannon);
     }
 
     private static bool ShouldApplyFrail()
@@ -203,8 +200,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.Current.Modifier == ModifierHex.Frail
-            && BossHexManager.IsCurrentBossFightActive();
+        return BossHexManager.IsModifierActive(ModifierHex.Frail);
     }
 
     private void ApplyConstraintHex(ConstraintHex hex)

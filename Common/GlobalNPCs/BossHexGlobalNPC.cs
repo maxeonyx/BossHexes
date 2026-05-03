@@ -39,8 +39,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
-        var hexes = BossHexManager.Current;
-        if (!hexes.HasAnyHex)
+        if (!BossHexManager.TryGetActiveHexes(npc.type, out var hexes) || !hexes.HasAnyHex)
             return;
 
         // Sync hex state to all clients
@@ -94,10 +93,9 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return;
 
-        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
             return;
 
-        var hexes = BossHexManager.Current;
         if (!hexes.HasAnyHex)
             return;
 
@@ -112,10 +110,8 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return;
 
-        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
             return;
-
-        var hexes = BossHexManager.Current;
 
         // Apply scale changes (only once per boss)
         if (!_appliedInitialScale && hexes.HasAnyHex)
@@ -140,10 +136,8 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return true;
 
-        if (!BossHexManager.IsPartOfCurrentBossFight(npc))
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
             return true;
-
-        var hexes = BossHexManager.Current;
 
         // InvisibleBoss: don't draw the boss at all
         if (hexes.Flashy == FlashyHex.InvisibleBoss)
@@ -178,13 +172,13 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     private static bool ShouldApplyHitEffects(NPC npc, out ActiveHexes hexes)
     {
-        hexes = BossHexManager.Current;
+        hexes = null;
 
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.IsPartOfCurrentBossFight(npc);
+        return BossHexManager.TryGetActiveHexes(npc, out hexes);
     }
 
     private static void ApplyBossDamageTakenModifier(ref NPC.HitModifiers modifiers, ActiveHexes hexes)
@@ -285,9 +279,13 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             BossHexManager.SendSync(Mod, -1, -1);
         }
 
+        string clearMessage = BossHexManager.HasAnyActiveHexes
+            ? "Boss defeated! Their hexes cleared."
+            : "Boss defeated! All active hexes cleared.";
+
         if (Main.netMode == NetmodeID.Server)
-            ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral("Boss defeated! Hex cleared."), Color.LimeGreen);
+            ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(clearMessage), Color.LimeGreen);
         else
-            Main.NewText("Boss defeated! Hex cleared.", Color.LimeGreen);
+            Main.NewText(clearMessage, Color.LimeGreen);
     }
 }

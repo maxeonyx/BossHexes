@@ -17,8 +17,7 @@ public sealed class MeteorShowerProjectile : GlobalProjectile
 
     public bool IsFromCurrentMeteorShower =>
         _sourceBossType >= 0 &&
-        BossHexManager.CurrentBossType >= 0 &&
-        _sourceBossType == BossHexManager.CurrentBossType;
+        BossHexManager.IsBossFightActive(_sourceBossType);
 
     public void MarkAsMeteorShowerProjectile(int bossType)
     {

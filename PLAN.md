@@ -9,8 +9,8 @@
 ### Hex architecture audit
 
 - Damage-denial constraints now belong in boss-side hit hooks using the actual hitter as the source of truth: `ModifyHitByItem` + `item.CountsAsClass(...)` for direct hits, `ModifyHitByProjectile` + `projectile.CountsAsClass(...)` for projectile hits. Do not infer class from `Player.HeldItem` or raw `DamageType` equality.
-- Worm / multi-segment boss coverage now uses a principled root-aware fight check: resolve the boss root via `npc.boss` or `npc.realLife`, then compare the root's type to `BossHexManager.CurrentBossType`. Boss-side visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints now apply to matching worm segments too.
-- Cross-cutting issue: `BossHexManager.Current` / `CurrentBossType` assume one active boss fight, which is shaky for multi-boss encounters and overlap/despawn edge cases.
+- Worm / multi-segment boss coverage now uses a principled root-aware fight check: resolve the boss root via `npc.boss` or `npc.realLife`, then match that root type against the active boss-fight registry. Boss-side visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints now apply to matching worm segments too.
+- Active fight tracking is now keyed by boss root type instead of a singleton `Current` / `CurrentBossType`. Boss-side matching, player-side fight-active checks, projectile provenance, and MeteorShower state now all route through that per-boss active-fight model, which is a better fit for overlap/despawn edge cases and multi-boss encounters.
 
 #### Rollable flashy hexes
 
@@ -19,7 +19,7 @@
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
 - `TinyFastBoss` / `HugeBoss` — movement-only for now. Size changes are real, and the speed effect is intentionally post-`VanillaAI` velocity nudging rather than claimed attack cadence / AI timing. Still needs gameplay testing and tuning across bosses. Worm coverage is now handled by the root-aware current-fight check.
 - `UnstableGravity` — good. Server/world schedules flips and tells each client to mutate its own gravity, matching Terraria's authority split.
-- `MeteorShower` — implemented. Server-side spawning stays authoritative, and reduced boss damage now uses per-projectile MeteorShower provenance captured at spawn time instead of guessing from `ProjectileID.FallingStar`. Damage reduction is also scoped to the current boss fight rather than raw `target.boss`.
+- `MeteorShower` — implemented. Server-side spawning stays authoritative, reduced boss damage uses per-projectile MeteorShower provenance captured at spawn time instead of guessing from `ProjectileID.FallingStar`, and fight state is now tracked per boss type instead of through a singleton current-fight assumption.
 
 #### Rollable modifier hexes
 
@@ -46,7 +46,7 @@
 
 **Possible causes to investigate:**
 1. **Config issue** — `EnableBossHexes` was false, or individual hex categories disabled.
-2. **Persistence edge case** — if EoW type was already in `_persistedHexes` with all `None` hexes, the early return at line 262 (`if (CurrentBossType == bossType && Current.HasAnyHex)`) wouldn't trigger, but `_persistedHexes.TryGetValue` would return a hex set with no active hexes. This can happen if all three category configs are disabled when a boss first spawns, then re-enabled later — the empty roll is persisted.
+2. **Persistence edge case** — if EoW type was already in `_persistedHexes` with all `None` hexes, the spawn path will still reuse that empty persisted roll. This can happen if all three category configs are disabled when a boss first spawns, then re-enabled later — the empty roll is persisted.
 3. **Multiplayer sync issue** — `SyncHexes` packet didn't reach the client, so hexes were rolled on server but announcement never appeared client-side.
 4. **NPC spawn order** — body/tail segments spawn first (they don't have `boss=true`), then head spawns. If something about the spawn source or timing prevents `OnSpawn` from firing on the head, hexes wouldn't roll.
 
@@ -62,9 +62,9 @@
 - SwiftBoss (body/tail normal speed)
 - GlassCannon damage bonus (hits on body/tail don't get +50%)
 
-**Current fix:** `BossHexManager.TryGetBossRoot(...)` resolves the boss root via `npc.boss` or `npc.realLife`, and `IsPartOfCurrentBossFight(...)` compares that root type to `CurrentBossType`. `BossHexGlobalNPC` now uses that helper for visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints.
+**Current fix:** `BossHexManager.TryGetBossRoot(...)` resolves the boss root via `npc.boss` or `npc.realLife`, and active-fight lookup is now keyed by that root type. `BossHexGlobalNPC` now uses that helper for visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints.
 
-**Remaining limitation:** `CurrentBossType` still models only one boss head type at a time, so true multi-boss encounters and overlap/despawn edge cases are still architecturally shaky.
+**Follow-up to test:** multi-boss encounters and despawn transitions should now behave more cleanly because active hex state, projectile provenance, and MeteorShower state are tracked per boss type rather than through one singleton current-fight model.
 
 Already noted in `BossHexManager.cs` TODO block (line 37-38 area).
 
