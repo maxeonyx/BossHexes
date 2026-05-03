@@ -51,7 +51,8 @@ public sealed class BossHexesState : ModSystem
 
     private void UpdateBossHexes()
     {
-        bool removedInactiveFights = BossHexManager.ReconcileActiveBossFights();
+        bool hasWorldEffectAuthority = HasWorldEffectAuthority();
+        bool removedInactiveFights = hasWorldEffectAuthority && BossHexManager.ReconcileActiveBossFights();
         bool anyBossAlive = AnyBossAlive();
         
         if (anyBossAlive && !_wasAnyBossAlive)
@@ -63,12 +64,21 @@ public sealed class BossHexesState : ModSystem
             // All bosses gone - could be defeat (handled by OnKill) or despawn/player death
             // Don't clear hexes here - OnKill handles actual defeats
             // Just clear the current fight state so next spawn re-rolls if needed
-            BossHexManager.OnAllBossesDead();
-            _meteorControllers.Clear();
+            if (hasWorldEffectAuthority)
+            {
+                BossHexManager.OnAllBossesDead();
+                _meteorControllers.Clear();
+
+                if (Main.netMode == NetmodeID.Server)
+                    BossHexManager.SendSync(Mod, -1, -1);
+            }
         }
         else if (removedInactiveFights)
         {
             ReconcileMeteorControllers();
+
+            if (Main.netMode == NetmodeID.Server)
+                BossHexManager.SendSync(Mod, -1, -1);
         }
 
         // Update active hex effects
