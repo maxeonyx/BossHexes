@@ -116,7 +116,10 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!hexes.HasAnyHex)
             return;
 
-        // Apply boss-side effects
+        if (!HasBossMovementAuthority())
+            return;
+
+        // Apply boss-side movement effects where NPC state is authoritative.
         ApplyBossFlashyEffects(npc, hexes);
         ApplyBossModifierEffects(npc, hexes);
     }
@@ -252,6 +255,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     {
         if (hexes.Modifier == ModifierHex.GlassCannon)
             modifiers.FinalDamage *= 1.5f;
+    }
+
+    private static bool HasBossMovementAuthority()
+    {
+        return Main.netMode != NetmodeID.MultiplayerClient;
     }
 
     private static bool ShouldBlockItemDamage(Item item, ConstraintHex constraint)
