@@ -34,7 +34,7 @@ Guidance specific to the `BossHexes` mod.
 - tModLoader `GlobalProjectile` draw hooks, especially `PreDrawExtras(...)` and `PreDraw(...)` for hiding boss-owned projectiles under `InvisibleBoss`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalProjectile.cs
 - tModLoader `ProjectileLoader` grapple dispatch and hook combination semantics: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ProjectileLoader.cs
 - tModLoader ExampleMod grapple example showing the dedicated hook surface: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Tools/ExampleHook.cs
-- tModLoader `GlobalNPC` hook reference, especially `PreAI`, `AI`, and `PostAI`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalNPC.cs
+- tModLoader `GlobalNPC` hook reference, especially `PreAI`, `AI`, `PostAI`, `PreDraw(...)`, and `BossHeadSlot(...)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalNPC.cs
 - tModLoader `NPCLoader` AI call order showing `VanillaAI()` before `GlobalNPC.AI(...)` / `PostAI(...)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/NPCLoader.cs
 - For true vanilla boss attack-cadence work, expect to read decompiled Terraria NPC AI source; there is not currently a generic tModLoader timing hook for arbitrary vanilla bosses.
 - tModLoader `Mount` patch surface, especially `Player.mount.Active`, `Player.mount.Type`, and `Player.mount.Dismount(Player)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/Mount.cs.patch

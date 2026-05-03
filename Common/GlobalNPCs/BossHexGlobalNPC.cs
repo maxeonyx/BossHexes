@@ -148,6 +148,19 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         return true;
     }
 
+    public override void BossHeadSlot(NPC npc, ref int index)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return;
+
+        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+            return;
+
+        if (hexes.Flashy == FlashyHex.InvisibleBoss)
+            index = -1;
+    }
+
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
     {
         if (!ShouldApplyHitEffects(npc, out var hexes))

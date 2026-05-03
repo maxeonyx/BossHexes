@@ -14,7 +14,7 @@
 
 #### Rollable flashy hexes
 
-- `InvisibleBoss` — partial. The boss sprite and boss-owned projectiles are now hidden using the real draw hooks plus per-projectile boss-fight provenance, and worm segments are covered by the root-aware fight check. Dust, minimap presence, boss health UI, and boss-linked non-worm entities can still leak the boss.
+- `InvisibleBoss` — partial. The boss sprite, boss-owned projectiles, and boss head / minimap icon are now hidden using the real draw hooks plus per-projectile boss-fight provenance, and worm segments are covered by the root-aware fight check. Dust, boss health UI, and boss-linked non-worm entities can still leak the boss.
 - `WingClip` — implemented. It now blocks sustained flight without collapsing into `Grounded`: wing and rocket resources are zeroed on the owning player, and an explicit set of flying / hovering mounts is cleanly dismounted. Normal jumps and extra jumps are still allowed.
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
 - `TinyFastBoss` / `HugeBoss` — movement-only for now. Size changes are real, and the speed effect is intentionally post-`VanillaAI` velocity nudging rather than claimed attack cadence / AI timing. Still needs gameplay testing and tuning across bosses. Worm coverage is now handled by the root-aware current-fight check.
