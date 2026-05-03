@@ -70,17 +70,17 @@ namespace BossHexes.Common.Systems;
  * Apply as a 2-tick debuff every frame for "permanent" effect during boss fight.
  * 
  * Already using buffs: Sluggish (Slow), BrokenArmor
- * Need to check: SlowAttack, etc.
+ * Need to check: Inaccurate, etc.
  * 
  * ExtraPotionSickness - IMPLEMENTED
  *   - Uses the actual Potion Sickness buff on the owning player as the source of truth
  *   - Extends newly applied/refreshed Potion Sickness once, without retroactively stretching an existing timer when the fight starts
  *   - Should make potion timing much more critical
  * 
- * SlowAttack - Reduced attack speed
- *   - Reduce player attack speed by ~30-40%
- *   - Hook: ModifyWeaponSpeed or similar
- *   - Affects all weapon types (melee swing, ranged fire rate, spell cast)
+ * SlowAttack - IMPLEMENTED
+ *   - Uses ModPlayer.UseSpeedMultiplier(Item) on the player side
+ *   - Treats the actual item use speed as the source of truth instead of approximating with the Slow movement debuff
+ *   - Applies to attack items as a fight-wide player debuff keyed to active modifier state
  * 
  * ManaDrain - IMPLEMENTED
  *   - Uses ModPlayer.ModifyManaCost on the player side
@@ -466,7 +466,8 @@ public static class BossHexManager
         ModifierHex.GlassCannon,
         ModifierHex.Marked,
         ModifierHex.ManaDrain,
-        // NOT implemented: SlowAttack, Inaccurate
+        ModifierHex.SlowAttack,
+        // NOT implemented: Inaccurate
     };
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]

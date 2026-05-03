@@ -77,6 +77,16 @@ public sealed class BossHexesPlayer : ModPlayer
         mult *= 1.5f;
     }
 
+    public override float UseSpeedMultiplier(Item item)
+    {
+        float multiplier = base.UseSpeedMultiplier(item);
+
+        if (!ShouldApplySlowAttack(item))
+            return multiplier;
+
+        return multiplier * 0.65f;
+    }
+
     public override bool CanUseItem(Item item)
     {
         if (!ShouldBlockBuffPotion(item))
@@ -205,8 +215,7 @@ public sealed class BossHexesPlayer : ModPlayer
                 break;
                 
             case ModifierHex.SlowAttack:
-                // Reduced attack speed (Slow debuff approximates this)
-                Player.AddBuff(BuffID.Slow, 2);
+                // Handled in UseSpeedMultiplier(Item)
                 break;
 
             // TODO: Implement remaining modifiers:
@@ -330,6 +339,15 @@ public sealed class BossHexesPlayer : ModPlayer
         return item.mana > 0 && BossHexManager.IsModifierActive(ModifierHex.ManaDrain);
     }
 
+    private static bool ShouldApplySlowAttack(Item item)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return IsAttackItem(item) && BossHexManager.IsModifierActive(ModifierHex.SlowAttack);
+    }
+
     private static bool HasPlayerStateAuthority(Player player)
     {
         return Main.netMode == NetmodeID.SinglePlayer || Main.myPlayer == player.whoAmI;
@@ -357,6 +375,11 @@ public sealed class BossHexesPlayer : ModPlayer
     private static bool IsBuffPotion(Item item)
     {
         return item.buffType > 0 && item.healLife <= 0 && item.healMana <= 0;
+    }
+
+    private static bool IsAttackItem(Item item)
+    {
+        return item.damage > 0 && item.useTime > 0 && item.useAnimation > 0;
     }
 
     private void ApplyConstraintHex(ConstraintHex hex)
