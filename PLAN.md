@@ -25,7 +25,7 @@
 #### Rollable modifier hexes
 
 - `SwiftBoss` — movement-only for now. Uses the same post-`VanillaAI` velocity-only approach as the flashy speed hexes and no longer claims a generic boss attack-rate change. Still needs gameplay testing and tuning. There does not currently seem to be a generic tModLoader hook for "run arbitrary vanilla boss AI faster," so true cadence work would require an explicit supported-boss / boss-family audit.
-- `Sluggish` — shaky. Uses vanilla `Slow`, which is principled, but the exact player-facing effect is only approximately "movement -25%".
+- `Sluggish` — reviewed. Uses vanilla `Slow`, which is already the principled implementation. The remaining question is gameplay feel: the exact player-facing effect is only approximately "movement -25%" and still needs real testing.
 - `Frail` — implemented. The max-life reduction now lives in `ModPlayer.ModifyMaxStats(...)`, which is the principled player-stat hook instead of rewriting `statLifeMax2` in `PostUpdate`.
 - `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.
 - `GlassCannon` — implemented. Boss damage taken is handled in boss-side hit hooks; player damage taken is handled in player-side hit hooks keyed to the actual attacking boss NPC or projectile, so overlapping fights do not leak the damage-taken bonus across bosses. Hostile projectiles are attributed to the boss fight via explicit projectile source tracking at spawn time rather than projectile-type guesses.

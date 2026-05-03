@@ -70,7 +70,7 @@ namespace BossHexes.Common.Systems;
  * Apply as a 2-tick debuff every frame for "permanent" effect during boss fight.
  * 
  * Already using buffs: Sluggish (Slow), BrokenArmor
- * Need to check: Inaccurate, etc.
+ * Reviewed: Sluggish is already principled via vanilla Slow; remaining question is gameplay feel/testing
  * 
  * ExtraPotionSickness - IMPLEMENTED
  *   - Uses the actual Potion Sickness buff on the owning player as the source of truth
