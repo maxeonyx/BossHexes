@@ -49,6 +49,15 @@ public sealed class BossHexesPlayer : ModPlayer
         _denyUseTextCooldown = 60;
     }
 
+    public void ShowNoBuffPotionsDeniedMessage()
+    {
+        if (Main.myPlayer != Player.whoAmI || _denyUseTextCooldown > 0)
+            return;
+
+        Main.NewText("Buff potions are disabled by the No Buff Potions hex!", Color.Orange);
+        _denyUseTextCooldown = 60;
+    }
+
     public override void ModifyMaxStats(out StatModifier health, out StatModifier mana)
     {
         health = StatModifier.Default;
@@ -66,6 +75,15 @@ public sealed class BossHexesPlayer : ModPlayer
             return;
 
         mult *= 1.5f;
+    }
+
+    public override bool CanUseItem(Item item)
+    {
+        if (!ShouldBlockBuffPotion(item))
+            return base.CanUseItem(item);
+
+        ShowNoBuffPotionsDeniedMessage();
+        return false;
     }
 
     public override void PostUpdateBuffs()
@@ -326,6 +344,21 @@ public sealed class BossHexesPlayer : ModPlayer
         return BossHexManager.IsModifierActive(ModifierHex.ExtraPotionSickness);
     }
 
+    private static bool ShouldBlockBuffPotion(Item item)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return BossHexManager.IsConstraintActive(ConstraintHex.NoBuffPotions)
+            && IsBuffPotion(item);
+    }
+
+    private static bool IsBuffPotion(Item item)
+    {
+        return item.buffType > 0 && item.healLife <= 0 && item.healMana <= 0;
+    }
+
     private void ApplyConstraintHex(ConstraintHex hex)
     {
         switch (hex)
@@ -339,7 +372,6 @@ public sealed class BossHexesPlayer : ModPlayer
                 break;
                 
             // TODO: Implement remaining constraints:
-            // - NoBuffPotions: check item use
             // - PacifistHealer: special role assignment
         }
     }

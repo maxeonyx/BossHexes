@@ -35,6 +35,7 @@
 #### Rollable constraint hexes
 
 - `NoRangedDamage` / `NoMeleeDamage` / `NoMagicDamage` — implemented. They now use boss-side hit hooks with principled item / projectile classification, and worm / multi-segment coverage follows the root-aware fight check instead of raw `npc.boss`.
+- `NoBuffPotions` — implemented. Buff-potion denial belongs on the player side, so it now uses `ModPlayer.CanUseItem(Item item)` and classifies the actual item being used via `item.buffType > 0`, while exempting life and mana restores. It behaves as a fight-wide constraint keyed to active constraint state instead of trying to infer from applied buffs or item names.
 - `Grounded` — implemented. Jump input is now blocked in `ModPlayer.SetControls()`, extra jumps are denied in `ModPlayer.CanStartExtraJump(...)`, and ongoing jump state is canceled via `Player.jump = 0` plus `Player.StopExtraJumpInProgress()` instead of zeroing upward velocity.
 - `NoGrapple` — implemented. New grapple attempts are now blocked in projectile grapple hooks (`CanUseGrapple`), in-flight hooks are prevented from latching via `GrappleCanLatchOnTo`, and already-active hooks are cleared from player state while the hex is active. Grapple classification now uses Terraria's `Main.projHook` source of truth instead of inferring from `aiStyle == 7`.
 

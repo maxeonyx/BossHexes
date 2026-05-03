@@ -471,12 +471,13 @@ public static class BossHexManager
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]
     {
+        ConstraintHex.NoBuffPotions,
         ConstraintHex.NoRangedDamage,
         ConstraintHex.NoMeleeDamage,
         ConstraintHex.NoMagicDamage,
         ConstraintHex.Grounded,
         ConstraintHex.NoGrapple,
-        // NOT implemented: NoBuffPotions, PacifistHealer
+        // NOT implemented: PacifistHealer
     };
 
     private static FlashyHex RollFlashyHex()
