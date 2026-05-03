@@ -22,13 +22,10 @@ public sealed class BossHexes : Mod
         switch (msgType)
         {
             case MessageType.SyncHexes:
-                // Apply hex state locally
-                BossHexManager.ReceiveSync(reader);
-
-                // Server forwards to other clients
-                if (Main.netMode == NetmodeID.Server)
+                // SyncHexes is authoritative server -> client state only.
+                if (Main.netMode == NetmodeID.MultiplayerClient)
                 {
-                    BossHexManager.SendSync(this, -1, whoAmI);
+                    BossHexManager.ReceiveSync(reader);
                 }
                 break;
 

@@ -589,11 +589,11 @@ public static class BossHexManager
     }
 
     /// <summary>
-    /// Send hex state to clients. Called from server after rolling hexes.
+    /// Send hex state to clients. Called from the authoritative server/world side only.
     /// </summary>
     public static void SendSync(Mod mod, int toWho = -1, int ignoreClient = -1)
     {
-        if (Main.netMode == NetmodeID.SinglePlayer)
+        if (Main.netMode != NetmodeID.Server)
             return;
 
         ModPacket packet = mod.GetPacket();
@@ -616,10 +616,13 @@ public static class BossHexManager
     }
 
     /// <summary>
-    /// Receive hex state from server. Called on clients.
+    /// Receive hex state from the server. Called on multiplayer clients only.
     /// </summary>
     public static void ReceiveSync(BinaryReader reader)
     {
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
         _activeHexesByBossType.Clear();
 
         int activeFightCount = reader.ReadInt32();
