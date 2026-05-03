@@ -83,66 +83,6 @@ public sealed class BossHexesPlayer : ModPlayer
     }
 
     /// <summary>
-    /// Modify damage dealt to NPCs based on active hexes.
-    /// This handles melee weapon hits (not projectiles).
-    /// </summary>
-    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers)
-    {
-        if (!target.boss)
-            return;
-
-        var cfg = ModContent.GetInstance<BossHexesConfig>();
-        if (cfg == null || !cfg.EnableBossHexes)
-            return;
-
-        var hexes = BossHexManager.Current;
-        
-        // NoMeleeDamage - melee attacks deal no damage to bosses
-        if (hexes.Constraint == ConstraintHex.NoMeleeDamage)
-        {
-            modifiers.FinalDamage *= 0f;
-        }
-    }
-
-    /// <summary>
-    /// Modify projectile damage dealt to NPCs based on active hexes.
-    /// </summary>
-    public override void ModifyHitNPCWithProj(Projectile proj, NPC target, ref NPC.HitModifiers modifiers)
-    {
-        if (!target.boss)
-            return;
-
-        var cfg = ModContent.GetInstance<BossHexesConfig>();
-        if (cfg == null || !cfg.EnableBossHexes)
-            return;
-
-        var hexes = BossHexManager.Current;
-        
-        // Determine damage class of the projectile
-        bool isRanged = proj.DamageType == DamageClass.Ranged || proj.DamageType.CountsAsClass(DamageClass.Ranged);
-        bool isMagic = proj.DamageType == DamageClass.Magic || proj.DamageType.CountsAsClass(DamageClass.Magic);
-        bool isMelee = proj.DamageType == DamageClass.Melee || proj.DamageType.CountsAsClass(DamageClass.Melee);
-
-        // NoRangedDamage - ranged projectiles deal no damage to bosses
-        if (hexes.Constraint == ConstraintHex.NoRangedDamage && isRanged)
-        {
-            modifiers.FinalDamage *= 0f;
-        }
-
-        // NoMagicDamage - magic projectiles deal no damage to bosses
-        if (hexes.Constraint == ConstraintHex.NoMagicDamage && isMagic)
-        {
-            modifiers.FinalDamage *= 0f;
-        }
-
-        // NoMeleeDamage - melee projectiles deal no damage to bosses
-        if (hexes.Constraint == ConstraintHex.NoMeleeDamage && isMelee)
-        {
-            modifiers.FinalDamage *= 0f;
-        }
-    }
-
-    /// <summary>
     /// Applies active boss hexes to the player. Only runs during boss fights.
     /// </summary>
     private void ApplyBossHexes()

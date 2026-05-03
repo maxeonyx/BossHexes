@@ -105,10 +105,11 @@ namespace BossHexes.Common.Systems;
  * 
  * CONSTRAINT HEXES:
  * 
- * NoMeleeDamage - POTENTIAL BUG
- *   - Currently only blocks melee *projectiles* via ModifyHitNPCWithProj
- *   - Direct sword swings (non-projectile melee) use ModifyHitNPC instead
- *   - TODO: Add ModifyHitNPC hook to also block direct melee hits
+ * Damage denial constraints (NoMeleeDamage / NoRangedDamage / NoMagicDamage)
+ *   - Must classify the actual hitter, not the player's currently held item
+ *   - Direct hits: use Item.CountsAsClass(...) in NPC.ModifyHitByItem
+ *   - Projectile hits: use Projectile.CountsAsClass(...) in NPC.ModifyHitByProjectile
+ *   - Do not use raw DamageType equality; use CountsAsClass(...) so derived/custom classes work
  * 
  * NoBuffPotions - Buff potions disabled (heal/mana OK)
  *   - Block use of buff potions (Ironskin, Swiftness, Regeneration, etc.)

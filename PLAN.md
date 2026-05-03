@@ -6,6 +6,35 @@
 
 ## Known Issues
 
+### Hex architecture audit
+
+- Damage-denial constraints now belong in boss-side hit hooks using the actual hitter as the source of truth: `ModifyHitByItem` + `item.CountsAsClass(...)` for direct hits, `ModifyHitByProjectile` + `projectile.CountsAsClass(...)` for projectile hits. Do not infer class from `Player.HeldItem` or raw `DamageType` equality.
+- Cross-cutting issue: most boss-side hexes gate on `npc.boss`, so worm bosses like Eater of Worlds / Destroyer body and tail segments bypass visuals, scaling, speed changes, GlassCannon bonus, and damage-denial constraints.
+- Cross-cutting issue: `BossHexManager.Current` / `CurrentBossType` assume one active boss fight, which is shaky for multi-boss encounters and overlap/despawn edge cases.
+
+#### Rollable flashy hexes
+
+- `InvisibleBoss` — partial. Correct draw hook, but only hides the boss sprite; projectiles, dust, minimap presence, and worm segments still leak the boss.
+- `WingClip` — shaky. Zeroing `wingTime` / `rocketTime` hits the real flight resource, but it is still a per-tick suppression rather than a complete no-air-mobility rule.
+- `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
+- `TinyFastBoss` / `HugeBoss` — shaky. Size changes are real, but the "fast" part is only velocity scaling, not attack cadence / AI timing, and worm segments are unaffected.
+- `UnstableGravity` — good. Server/world schedules flips and tells each client to mutate its own gravity, matching Terraria's authority split.
+- `MeteorShower` — shaky. Server-side spawning is right, but boss-damage reduction currently identifies hex meteors by `ProjectileID.FallingStar`, which is too broad a source of truth.
+
+#### Rollable modifier hexes
+
+- `SwiftBoss` — shaky. Same velocity-only problem as the flashy speed hexes; this is not a true 25% faster boss AI / attack rate change.
+- `Sluggish` — shaky. Uses vanilla `Slow`, which is principled, but the exact player-facing effect is only approximately "movement -25%".
+- `Frail` — shaky. Numeric intent is right, but rewriting `statLifeMax2` in `PostUpdate` is a fragile hook.
+- `BrokenArmor` — good. Reapplying vanilla `BrokenArmor` is principled and matches the intended effect well.
+- `GlassCannon` — broken. Only the boss-takes-more-damage half exists; the player-takes-more-damage half is still missing.
+
+#### Rollable constraint hexes
+
+- `NoRangedDamage` / `NoMeleeDamage` / `NoMagicDamage` — now principled in hook choice and hit classification, but still incomplete for worm / multi-segment bosses because those hits often land on NPCs without `boss=true`.
+- `Grounded` — shaky. It cancels obvious upward jump velocity, but it is still a heuristic rather than a true "cannot jump" implementation.
+- `NoGrapple` — shaky. Blocking `CanUseItem` is the right general area, but identifying hooks by `aiStyle == 7` is heuristic and only blocks new grapples.
+
 ### Eater of Worlds hexes not appearing (reported, cause uncertain)
 
 **Symptom:** EoW spawned from breaking a shadow orb, no hex announcement appeared.

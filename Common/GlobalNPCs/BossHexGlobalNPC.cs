@@ -156,38 +156,66 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
     {
-        if (!npc.boss)
+        if (!ShouldApplyHitEffects(npc, out var hexes))
             return;
 
-        var cfg = ModContent.GetInstance<BossHexesConfig>();
-        if (cfg == null || !cfg.EnableBossHexes)
-            return;
+        ApplyBossDamageTakenModifier(ref modifiers, hexes);
 
-        var hexes = BossHexManager.Current;
-
-        // GlassCannon: boss takes 50% more damage
-        if (hexes.Modifier == ModifierHex.GlassCannon)
-        {
-            modifiers.FinalDamage *= 1.5f;
-        }
+        if (ShouldBlockProjectileDamage(projectile, hexes.Constraint))
+            modifiers.FinalDamage *= 0f;
     }
 
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers)
     {
-        if (!npc.boss)
+        if (!ShouldApplyHitEffects(npc, out var hexes))
             return;
+
+        ApplyBossDamageTakenModifier(ref modifiers, hexes);
+
+        if (ShouldBlockItemDamage(item, hexes.Constraint))
+            modifiers.FinalDamage *= 0f;
+    }
+
+    private static bool ShouldApplyHitEffects(NPC npc, out ActiveHexes hexes)
+    {
+        hexes = BossHexManager.Current;
+
+        if (!npc.boss)
+            return false;
 
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
-            return;
+            return false;
 
-        var hexes = BossHexManager.Current;
+        return true;
+    }
 
-        // GlassCannon: boss takes 50% more damage
+    private static void ApplyBossDamageTakenModifier(ref NPC.HitModifiers modifiers, ActiveHexes hexes)
+    {
         if (hexes.Modifier == ModifierHex.GlassCannon)
-        {
             modifiers.FinalDamage *= 1.5f;
-        }
+    }
+
+    private static bool ShouldBlockItemDamage(Item item, ConstraintHex constraint)
+    {
+        return constraint switch
+        {
+            ConstraintHex.NoMeleeDamage => item.CountsAsClass(DamageClass.Melee),
+            ConstraintHex.NoRangedDamage => item.CountsAsClass(DamageClass.Ranged),
+            ConstraintHex.NoMagicDamage => item.CountsAsClass(DamageClass.Magic),
+            _ => false,
+        };
+    }
+
+    private static bool ShouldBlockProjectileDamage(Projectile projectile, ConstraintHex constraint)
+    {
+        return constraint switch
+        {
+            ConstraintHex.NoMeleeDamage => projectile.CountsAsClass(DamageClass.Melee),
+            ConstraintHex.NoRangedDamage => projectile.CountsAsClass(DamageClass.Ranged),
+            ConstraintHex.NoMagicDamage => projectile.CountsAsClass(DamageClass.Magic),
+            _ => false,
+        };
     }
 
     private void ApplyBossFlashyEffects(NPC npc, ActiveHexes hexes)
