@@ -423,6 +423,9 @@ public static class BossHexManager
 
         if (TryGetActiveHexes(bossType, out hexes))
         {
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+                return true;
+
             if (hexes.ActiveRootWhoAmI == spawningBossRootWhoAmI)
                 return true;
 
