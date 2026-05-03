@@ -87,11 +87,10 @@ namespace BossHexes.Common.Systems;
  *   - Treats ManaDrain as a fight-wide player debuff keyed to active modifier state
  *   - Applies once when any active boss fight has ManaDrain
  * 
- * Inaccurate - Ranged spread increased
- *   - Add random spread/deviation to all ranged projectiles
- *   - Hook: ModifyShootStats or Shoot override
- *   - Spread angle: maybe ±5-10 degrees
- *   - Makes precision shots unreliable
+ * Inaccurate - IMPLEMENTED
+ *   - Uses ModPlayer.ModifyShootStats(Item, ...) on the player side
+ *   - Treats the actual ranged attack item and outgoing shot velocity as the source of truth
+ *   - Applies once per fired ranged shot as a fight-wide player debuff keyed to active modifier state
  * 
  * Marked - Boss deals +25% damage
  *   - IMPLEMENTED: Uses the actual attacking NPC / projectile as the source of truth
@@ -467,7 +466,7 @@ public static class BossHexManager
         ModifierHex.Marked,
         ModifierHex.ManaDrain,
         ModifierHex.SlowAttack,
-        // NOT implemented: Inaccurate
+        ModifierHex.Inaccurate,
     };
 
     private static readonly ConstraintHex[] ImplementedConstraintHexes = new[]

@@ -14,6 +14,8 @@ namespace BossHexes.Common.Players;
 /// </summary>
 public sealed class BossHexesPlayer : ModPlayer
 {
+    private const float InaccurateSpreadDegrees = 8f;
+
     private int _denyUseTextCooldown;
     private int _lastPotionSicknessTime;
 
@@ -85,6 +87,14 @@ public sealed class BossHexesPlayer : ModPlayer
             return multiplier;
 
         return multiplier * 0.65f;
+    }
+
+    public override void ModifyShootStats(Item item, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage, ref float knockback)
+    {
+        if (!ShouldApplyInaccurate(item) || velocity.LengthSquared() <= 0f)
+            return;
+
+        velocity = velocity.RotatedByRandom(MathHelper.ToRadians(InaccurateSpreadDegrees));
     }
 
     public override bool CanUseItem(Item item)
@@ -218,8 +228,11 @@ public sealed class BossHexesPlayer : ModPlayer
                 // Handled in UseSpeedMultiplier(Item)
                 break;
 
+            case ModifierHex.Inaccurate:
+                // Handled in ModifyShootStats(Item, ...)
+                break;
+
             // TODO: Implement remaining modifiers:
-            // - Inaccurate: spread projectiles
             // - SwiftBoss: handled in BossHexGlobalNPC
         }
     }
@@ -346,6 +359,17 @@ public sealed class BossHexesPlayer : ModPlayer
             return false;
 
         return IsAttackItem(item) && BossHexManager.IsModifierActive(ModifierHex.SlowAttack);
+    }
+
+    private static bool ShouldApplyInaccurate(Item item)
+    {
+        var cfg = ModContent.GetInstance<BossHexesConfig>();
+        if (cfg == null || !cfg.EnableBossHexes)
+            return false;
+
+        return IsAttackItem(item)
+            && item.CountsAsClass(DamageClass.Ranged)
+            && BossHexManager.IsModifierActive(ModifierHex.Inaccurate);
     }
 
     private static bool HasPlayerStateAuthority(Player player)

@@ -32,6 +32,7 @@
 - `ManaDrain` — implemented. Mana cost changes belong on the player side, so it now uses `ModPlayer.ModifyManaCost(...)` as a fight-wide debuff keyed to active modifier state. It applies once when any active boss fight has `ManaDrain`, rather than trying to guess which boss a spell was "for".
 - `ExtraPotionSickness` — implemented. Potion delay belongs on the player side, so it now uses the actual `BuffID.PotionSickness` buff as the source of truth in `ModPlayer.PostUpdateBuffs()`. Newly applied or refreshed potion sickness is tripled once while the modifier is active, without retroactively stretching an already-running timer when the fight starts.
 - `SlowAttack` — implemented. Attack speed belongs on the player side, so it now uses `ModPlayer.UseSpeedMultiplier(Item)` and treats the actual item use speed as the source of truth instead of approximating with the vanilla `Slow` movement debuff. It applies to attack items as a fight-wide debuff keyed to active modifier state.
+- `Inaccurate` — implemented. Projectile spread belongs at shot creation time, so it now uses `ModPlayer.ModifyShootStats(Item, ...)` and treats the actual ranged attack item plus outgoing shot velocity as the source of truth. It applies once per fired ranged shot as a fight-wide debuff keyed to active modifier state.
 
 #### Rollable constraint hexes
 
