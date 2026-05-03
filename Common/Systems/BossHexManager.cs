@@ -301,10 +301,10 @@ public static class BossHexManager
             if (!seenBossTypes.Add(root.type))
                 continue;
 
-            if (!OnBossSpawn(root.type))
+            if (!TryEnsureActiveHexes(root.type, out var activeHexes, out bool activatedFight) || !activatedFight)
                 continue;
 
-            if (!TryGetActiveHexes(root.type, out var activeHexes) || !activeHexes.HasAnyHex)
+            if (!activeHexes.HasAnyHex)
                 continue;
 
             activatedFights.Add(new KeyValuePair<int, ActiveHexes>(root.type, activeHexes));
@@ -385,6 +385,27 @@ public static class BossHexManager
     public static bool TryGetActiveHexes(int bossType, out ActiveHexes hexes)
     {
         return _activeHexesByBossType.TryGetValue(bossType, out hexes);
+    }
+
+    public static bool TryEnsureActiveHexes(int bossType, out ActiveHexes hexes, out bool activatedFight)
+    {
+        activatedFight = false;
+        hexes = null;
+
+        if (bossType < 0)
+            return false;
+
+        if (TryGetActiveHexes(bossType, out hexes))
+            return true;
+
+        if (Main.netMode == NetmodeID.MultiplayerClient)
+            return false;
+
+        activatedFight = OnBossSpawn(bossType);
+        if (!activatedFight)
+            return false;
+
+        return TryGetActiveHexes(bossType, out hexes);
     }
 
     public static bool TryGetActiveHexes(int bossType, int encounterId, out ActiveHexes hexes)

@@ -143,6 +143,16 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
 
     private static bool TryGetCurrentFightIdentity(NPC npc, out int bossType, out int encounterId)
     {
-        return BossHexGlobalNPC.TryGetCurrentFightHexes(npc, out bossType, out encounterId, out _);
+        bossType = -1;
+        encounterId = -1;
+
+        if (BossHexGlobalNPC.TryGetCurrentFightHexes(npc, out bossType, out encounterId, out _))
+            return true;
+
+        if (!BossHexManager.TryGetBossRoot(npc, out var root))
+            return false;
+
+        bossType = root.type;
+        return ModContent.GetInstance<BossHexesState>().TryEnsureActiveFight(bossType, out encounterId, out _);
     }
 }

@@ -49,6 +49,27 @@ public sealed class BossHexesState : ModSystem
         UpdateBossHexes();
     }
 
+    public bool TryEnsureActiveFight(int bossType, out int encounterId, out ActiveHexes hexes)
+    {
+        encounterId = -1;
+        hexes = null;
+
+        if (!BossHexManager.TryEnsureActiveHexes(bossType, out hexes, out bool activatedFight))
+            return false;
+
+        encounterId = hexes.EncounterId;
+
+        if (activatedFight)
+        {
+            if (Main.netMode == NetmodeID.Server)
+                BossHexManager.SendSync(Mod, -1, -1);
+
+            AnnounceActivatedFight(hexes);
+        }
+
+        return true;
+    }
+
     private void UpdateBossHexes()
     {
         bool hasWorldEffectAuthority = HasWorldEffectAuthority();

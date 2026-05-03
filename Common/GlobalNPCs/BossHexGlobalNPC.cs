@@ -436,7 +436,14 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (TryGetCurrentFightHexes(npc, out bossType, out encounterId, out _))
             return true;
 
-        return false;
+        if (!BossHexManager.TryGetBossRoot(npc, out var root))
+            return false;
+
+        if (!ModContent.GetInstance<BossHexesState>().TryEnsureActiveFight(root.type, out encounterId, out _))
+            return false;
+
+        bossType = root.type;
+        return true;
     }
 
     public static bool TryGetCurrentFightHexes(NPC npc, out int bossType, out ActiveHexes hexes)
