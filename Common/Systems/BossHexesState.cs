@@ -204,6 +204,20 @@ public sealed class BossHexesState : ModSystem
         return controller;
     }
 
+    public void OnBossFightEnded(int bossType, int encounterId)
+    {
+        if (bossType < 0 || encounterId < 0)
+            return;
+
+        if (!_meteorControllers.TryGetValue(bossType, out var controller))
+            return;
+
+        if (controller.EncounterId != encounterId)
+            return;
+
+        _meteorControllers.Remove(bossType);
+    }
+
     private void ReconcileMeteorControllers()
     {
         var inactiveBossTypes = new List<int>();

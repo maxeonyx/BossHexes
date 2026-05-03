@@ -392,9 +392,16 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             return;
 
         bool clearedHexes = !BossHexManager.HasOtherActiveBossRootOfType(root.type, root.whoAmI);
+        int endedEncounterId = -1;
+
+        if (clearedHexes && BossHexManager.TryGetActiveHexes(root.type, out var activeHexes))
+            endedEncounterId = activeHexes.EncounterId;
 
         // Clear hex persistence for this boss type
         BossHexManager.OnBossDefeated(root.type, root.whoAmI);
+
+        if (clearedHexes)
+            ModContent.GetInstance<BossHexesState>().OnBossFightEnded(root.type, endedEncounterId);
 
         // Sync cleared state to clients
         if (Main.netMode == NetmodeID.Server)
