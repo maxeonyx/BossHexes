@@ -43,7 +43,7 @@ public sealed class MeteorShowerProjectile : GlobalProjectile
         if (!IsFromCurrentMeteorShower)
             return;
 
-        if (!BossHexManager.IsPartOfCurrentBossFight(target))
+        if (!BossHexManager.IsPartOfBossFight(target, _sourceBossType))
             return;
 
         modifiers.FinalDamage *= 0.1f;
