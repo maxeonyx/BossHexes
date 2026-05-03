@@ -4,6 +4,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using BossHexes.Common.Config;
+using BossHexes.Common.GlobalNPCs;
 using BossHexes.Common.GlobalProjectiles;
 using BossHexes.Common.Systems;
 
@@ -317,7 +318,7 @@ public sealed class BossHexesPlayer : ModPlayer
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.TryGetActiveHexes(npc, out hexes);
+        return BossHexGlobalNPC.TryGetCurrentFightHexes(npc, out _, out hexes);
     }
 
     private static bool ShouldApplyIncomingBossDamageModifiers(Projectile projectile, out ActiveHexes hexes)

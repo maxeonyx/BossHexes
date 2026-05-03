@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ModLoader;
+using BossHexes.Common.GlobalNPCs;
 using Terraria.ModLoader.IO;
 using BossHexes.Common.Systems;
 
@@ -115,15 +116,6 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
 
     private static bool TryGetCurrentFightBossType(NPC npc, out int bossType)
     {
-        bossType = -1;
-
-        if (!BossHexManager.TryGetBossRoot(npc, out var root))
-            return false;
-
-        if (!BossHexManager.IsBossFightActive(root.type))
-            return false;
-
-        bossType = root.type;
-        return true;
+        return BossHexGlobalNPC.TryGetCurrentFightHexes(npc, out bossType, out _);
     }
 }

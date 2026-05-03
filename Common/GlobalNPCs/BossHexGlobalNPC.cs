@@ -31,6 +31,8 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     private int _originalHeight;
     private int _sourceBossType = -1;
 
+    public int SourceBossType => _sourceBossType;
+
     public override void OnSpawn(NPC npc, Terraria.DataStructures.IEntitySource source)
     {
         _sourceBossType = ResolveSourceBossType(source);
@@ -249,23 +251,12 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.TryGetActiveHexes(npc, out hexes);
+        return TryGetCurrentFightHexes(npc, out _, out hexes);
     }
 
     private bool TryGetVisibilityHexes(NPC npc, out ActiveHexes hexes)
     {
-        hexes = null;
-
-        if (BossHexManager.TryGetActiveHexes(npc, out hexes))
-            return true;
-
-        if (_sourceBossType < 0)
-            return false;
-
-        if (!BossHexManager.IsBossFightActive(_sourceBossType))
-            return false;
-
-        return BossHexManager.TryGetActiveHexes(_sourceBossType, out hexes);
+        return TryGetCurrentFightHexes(npc, out _, out hexes);
     }
 
     private static void ApplyBossDamageTakenModifier(ref NPC.HitModifiers modifiers, ActiveHexes hexes)
@@ -434,17 +425,35 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     {
         bossType = -1;
 
-        if (BossHexManager.TryGetActiveBossFight(npc, out bossType, out _))
+        if (TryGetCurrentFightHexes(npc, out bossType, out _))
             return true;
 
-        var bossSource = npc.GetGlobalNPC<BossHexGlobalNPC>();
-        if (bossSource._sourceBossType < 0)
+        return false;
+    }
+
+    public static bool TryGetCurrentFightHexes(NPC npc, out int bossType, out ActiveHexes hexes)
+    {
+        if (BossHexManager.TryGetActiveBossFight(npc, out bossType, out hexes))
+            return true;
+
+        return npc.GetGlobalNPC<BossHexGlobalNPC>().TryGetLinkedFightHexes(out bossType, out hexes);
+    }
+
+    public bool TryGetLinkedFightHexes(out int bossType, out ActiveHexes hexes)
+    {
+        bossType = -1;
+        hexes = null;
+
+        if (_sourceBossType < 0)
             return false;
 
-        if (!BossHexManager.IsBossFightActive(bossSource._sourceBossType))
+        if (!BossHexManager.IsBossFightActive(_sourceBossType))
             return false;
 
-        bossType = bossSource._sourceBossType;
+        if (!BossHexManager.TryGetActiveHexes(_sourceBossType, out hexes))
+            return false;
+
+        bossType = _sourceBossType;
         return true;
     }
 
