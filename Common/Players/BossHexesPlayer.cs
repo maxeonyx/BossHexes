@@ -15,6 +15,11 @@ public sealed class BossHexesPlayer : ModPlayer
 {
     private int _denyUseTextCooldown;
 
+    private static bool HasPlayerMovementAuthority(Player player)
+    {
+        return Main.netMode == NetmodeID.SinglePlayer || Main.myPlayer == player.whoAmI;
+    }
+
     private bool ShouldApplyGrounded()
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
@@ -138,9 +143,7 @@ public sealed class BossHexesPlayer : ModPlayer
         switch (hex)
         {
             case FlashyHex.WingClip:
-                // Disable flight completely
-                Player.wingTime = 0f;
-                Player.rocketTime = 0;
+                ApplyWingClip();
                 break;
                 
             case FlashyHex.Blackout:
@@ -185,6 +188,38 @@ public sealed class BossHexesPlayer : ModPlayer
         }
     }
 
+    private void ApplyWingClip()
+    {
+        if (!HasPlayerMovementAuthority(Player))
+            return;
+
+        Player.wingTime = 0f;
+        Player.rocketTime = 0;
+
+        if (Player.mount.Active && IsBlockedFlightMount(Player.mount.Type))
+        {
+            Player.mount.Dismount(Player);
+        }
+    }
+
+    private static bool IsBlockedFlightMount(int mountType)
+    {
+        return mountType switch
+        {
+            0 => true,  // Rudolph
+            2 => true,  // Pigron
+            5 => true,  // Bee
+            7 => true,  // UFO
+            8 => true,  // Drill Containment Unit
+            12 => true, // Cute Fishron
+            23 => true, // Witch's Broom
+            44 => true, // Pirate Ship
+            48 => true, // Dark Mage's Tome
+            50 => true, // Winged Slime
+            _ => false,
+        };
+    }
+
     private static bool ShouldApplyGlassCannon()
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
@@ -223,7 +258,7 @@ public sealed class BossHexesPlayer : ModPlayer
 
     private void CancelGroundedJumpState()
     {
-        if (Main.netMode != NetmodeID.SinglePlayer && Main.myPlayer != Player.whoAmI)
+        if (!HasPlayerMovementAuthority(Player))
             return;
 
         Player.jump = 0;

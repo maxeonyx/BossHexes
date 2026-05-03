@@ -15,7 +15,7 @@
 #### Rollable flashy hexes
 
 - `InvisibleBoss` — partial. Correct draw hook, but only hides the boss sprite; projectiles, dust, minimap presence, and worm segments still leak the boss.
-- `WingClip` — shaky. Zeroing `wingTime` / `rocketTime` hits the real flight resource, but it is still a per-tick suppression rather than a complete no-air-mobility rule.
+- `WingClip` — implemented. It now blocks sustained flight without collapsing into `Grounded`: wing and rocket resources are zeroed on the owning player, and an explicit set of flying / hovering mounts is cleanly dismounted. Normal jumps and extra jumps are still allowed.
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
 - `TinyFastBoss` / `HugeBoss` — movement-only for now. Size changes are real, and the speed effect is intentionally post-`VanillaAI` velocity nudging rather than claimed attack cadence / AI timing. Still needs gameplay testing and tuning across bosses. Worm coverage is now handled by the root-aware current-fight check.
 - `UnstableGravity` — good. Server/world schedules flips and tells each client to mutate its own gravity, matching Terraria's authority split.

@@ -16,6 +16,7 @@ Guidance specific to the `BossHexes` mod.
 - Be careful with Terraria authority boundaries: player state changes belong on the player side; world and boss state belong on the server/world side.
 - Worm and multi-segment bosses are a known architectural trap here. `npc.boss` usually only applies to the head, so boss-side effects often need segment-aware logic.
 - There does not currently seem to be a generic tModLoader hook for "run arbitrary vanilla boss AI / attack cadence faster". Generic speed hexes that only adjust `npc.velocity` after vanilla AI are approximations, not true cadence changes.
+- There does not currently seem to be a generic public tModLoader source of truth for "this mount is a flying mount". For `WingClip`, treat wing / rocket flight through `Player.wingTime` and `Player.rocketTime`, and treat flying mounts through an explicit blocked-mount set plus `Player.mount.Dismount(Player)` on the owning player.
 
 ## Useful Resources
 
@@ -35,3 +36,5 @@ Guidance specific to the `BossHexes` mod.
 - tModLoader `GlobalNPC` hook reference, especially `PreAI`, `AI`, and `PostAI`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalNPC.cs
 - tModLoader `NPCLoader` AI call order showing `VanillaAI()` before `GlobalNPC.AI(...)` / `PostAI(...)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/NPCLoader.cs
 - For true vanilla boss attack-cadence work, expect to read decompiled Terraria NPC AI source; there is not currently a generic tModLoader timing hook for arbitrary vanilla bosses.
+- tModLoader `Mount` patch surface, especially `Player.mount.Active`, `Player.mount.Type`, and `Player.mount.Dismount(Player)`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/Mount.cs.patch
+- tModLoader `MountID` patch surface, especially `MountID.Sets.Cart` and the lack of a generic flying-mount classifier: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ID/MountID.cs.patch
