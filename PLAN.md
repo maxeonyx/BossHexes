@@ -42,6 +42,10 @@
 - `Grounded` — implemented. Jump input is now blocked in `ModPlayer.SetControls()`, extra jumps are denied in `ModPlayer.CanStartExtraJump(...)`, and ongoing jump state is canceled via `Player.jump = 0` plus `Player.StopExtraJumpInProgress()` instead of zeroing upward velocity.
 - `NoGrapple` — implemented. New grapple attempts are now blocked in projectile grapple hooks (`CanUseGrapple`), in-flight hooks are prevented from latching via `GrappleCanLatchOnTo`, and already-active hooks are cleared from player state while the hex is active. Grapple classification now uses Terraria's `Main.projHook` source of truth instead of inferring from `aiStyle == 7`.
 
+### Empty persisted hex rolls
+
+- Empty all-`None` rolls are no longer persisted or reloaded. If hex categories are disabled when a boss first spawns, the mod now leaves that boss without persisted hex state instead of saving an empty roll that could later be reused after categories are re-enabled.
+
 ### Eater of Worlds hexes not appearing (reported, cause uncertain)
 
 **Symptom:** EoW spawned from breaking a shadow orb, no hex announcement appeared.
@@ -53,7 +57,7 @@
 
 **Possible causes to investigate:**
 1. **Config issue** — `EnableBossHexes` was false, or individual hex categories disabled.
-2. **Persistence edge case** — if EoW type was already in `_persistedHexes` with all `None` hexes, the spawn path will still reuse that empty persisted roll. This can happen if all three category configs are disabled when a boss first spawns, then re-enabled later — the empty roll is persisted.
+2. **Persistence edge case** — previously, if EoW type was already in `_persistedHexes` with all `None` hexes, the spawn path would reuse that empty persisted roll. This happened if all three category configs were disabled when a boss first spawned, then re-enabled later. That empty-roll persistence path is now fixed, but it may not have been the cause of the reported incident.
 3. **Multiplayer sync issue** — `SyncHexes` packet didn't reach the client, so hexes were rolled on server but announcement never appeared client-side.
 4. **NPC spawn order** — body/tail segments spawn first (they don't have `boss=true`), then head spawns. If something about the spawn source or timing prevents `OnSpawn` from firing on the head, hexes wouldn't roll.
 

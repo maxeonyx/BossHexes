@@ -268,18 +268,9 @@ public static class BossHexManager
         if (_activeHexesByBossType.ContainsKey(bossType))
             return;
 
-        ActiveHexes persistedHexes;
-
-        // Check for persisted hexes for this boss
-        if (_persistedHexes.TryGetValue(bossType, out var persisted))
-        {
-            persistedHexes = persisted;
-        }
-        else
-        {
-            persistedHexes = RollHexes(cfg).CloneHexesOnly();
-            _persistedHexes[bossType] = persistedHexes;
-        }
+        var persistedHexes = GetOrRollPersistedHexes(bossType, cfg);
+        if (persistedHexes == null)
+            return;
 
         var activeHexes = CreateActiveFightState(persistedHexes);
         if (activeHexes.HasAnyHex)
@@ -508,6 +499,21 @@ public static class BossHexManager
         return hexes;
     }
 
+    private static ActiveHexes GetOrRollPersistedHexes(int bossType, BossHexesConfig cfg)
+    {
+        if (_persistedHexes.TryGetValue(bossType, out var persisted) && persisted.HasAnyHex)
+            return persisted;
+
+        _persistedHexes.Remove(bossType);
+
+        var rolledHexes = RollHexes(cfg).CloneHexesOnly();
+        if (!rolledHexes.HasAnyHex)
+            return null;
+
+        _persistedHexes[bossType] = rolledHexes;
+        return rolledHexes;
+    }
+
     private static int CountActivePlayers()
     {
         int count = 0;
@@ -608,6 +614,9 @@ public static class BossHexManager
         var list = new List<TagCompound>();
         foreach (var (bossType, hexes) in _persistedHexes)
         {
+            if (!hexes.HasAnyHex)
+                continue;
+
             list.Add(new TagCompound
             {
                 ["bossType"] = bossType,
@@ -638,6 +647,10 @@ public static class BossHexManager
                 Modifier = (ModifierHex)entry.GetByte("modifier"),
                 Constraint = (ConstraintHex)entry.GetByte("constraint"),
             };
+
+            if (!hexes.HasAnyHex)
+                continue;
+
             _persistedHexes[bossType] = hexes;
         }
     }
