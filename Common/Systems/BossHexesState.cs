@@ -18,6 +18,11 @@ public sealed class BossHexesState : ModSystem
     private bool _wasAnyBossAlive;
     private readonly Dictionary<int, MeteorShowerController> _meteorControllers = new();
 
+    private static bool HasWorldEffectAuthority()
+    {
+        return Main.netMode != NetmodeID.MultiplayerClient;
+    }
+
     public override void OnWorldLoad()
     {
         _wasAnyBossAlive = AnyBossAlive();
@@ -74,13 +79,15 @@ public sealed class BossHexesState : ModSystem
 
     private void UpdateActiveHexEffects()
     {
+        bool hasWorldEffectAuthority = HasWorldEffectAuthority();
+
         foreach (var (bossType, hexes) in BossHexManager.GetActiveBossFights())
         {
             if (!BossHexManager.IsBossFightActive(bossType) || !hexes.HasAnyHex)
                 continue;
 
             // Time Limit
-            if (hexes.Flashy == FlashyHex.TimeLimit)
+            if (hasWorldEffectAuthority && hexes.Flashy == FlashyHex.TimeLimit)
             {
                 hexes.TimeLimitTicks--;
 
@@ -124,7 +131,7 @@ public sealed class BossHexesState : ModSystem
             }
 
             // Unstable Gravity - flips at random intervals (4-8 seconds with jitter)
-            if (hexes.Flashy == FlashyHex.UnstableGravity)
+            if (hasWorldEffectAuthority && hexes.Flashy == FlashyHex.UnstableGravity)
             {
                 hexes.GravityFlipTicks++;
 
@@ -167,7 +174,7 @@ public sealed class BossHexesState : ModSystem
             }
 
             // Meteor Shower - uses dedicated controller for clustered spawning
-            if (hexes.Flashy == FlashyHex.MeteorShower)
+            if (hasWorldEffectAuthority && hexes.Flashy == FlashyHex.MeteorShower)
             {
                 GetMeteorController(bossType).Update();
             }
