@@ -1,4 +1,5 @@
 using System.IO;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ModLoader;
@@ -20,6 +21,10 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
         _sourceBossType >= 0 &&
         BossHexManager.IsBossFightActive(_sourceBossType);
 
+    public bool IsFromInvisibleBossFight =>
+        TryGetSourceFightHexes(out var hexes) &&
+        hexes.Flashy == FlashyHex.InvisibleBoss;
+
     public override void OnSpawn(Projectile projectile, IEntitySource source)
     {
         _sourceBossType = ResolveSourceBossType(source);
@@ -37,6 +42,29 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
         _sourceBossType = bitReader.ReadBit()
             ? binaryReader.ReadInt32()
             : -1;
+    }
+
+    public override bool PreDrawExtras(Projectile projectile)
+    {
+        return !IsFromInvisibleBossFight;
+    }
+
+    public override bool PreDraw(Projectile projectile, ref Color lightColor)
+    {
+        return !IsFromInvisibleBossFight;
+    }
+
+    private bool TryGetSourceFightHexes(out ActiveHexes hexes)
+    {
+        hexes = null;
+
+        if (_sourceBossType < 0)
+            return false;
+
+        if (!BossHexManager.IsBossFightActive(_sourceBossType))
+            return false;
+
+        return BossHexManager.TryGetActiveHexes(_sourceBossType, out hexes);
     }
 
     private static int ResolveSourceBossType(IEntitySource source)

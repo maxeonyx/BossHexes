@@ -30,12 +30,10 @@ namespace BossHexes.Common.Systems;
  * FLASHY HEXES:
  * 
  * InvisibleBoss - PARTIALLY IMPLEMENTED
- *   - Currently: Only hides the boss sprite (alpha = 0)
- *   - TODO: Hide boss projectiles (or make them semi-transparent)
+ *   - Currently: Hides the boss sprite and boss-owned projectiles using per-projectile boss-fight provenance
  *   - TODO: Hide dust/particles spawned by boss
  *   - TODO: Hide minimap icon
  *   - TODO: Consider hiding the bottom health bar (or just the name?)
- *   - TODO: Handle multi-segment bosses (Eater of Worlds, Destroyer)
  *   - TODO: Handle boss minions (Skeletron hands, Plantera tentacles, etc.)
  * 
  * Blackout - NEEDS TESTING

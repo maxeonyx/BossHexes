@@ -31,6 +31,7 @@ Guidance specific to the `BossHexes` mod.
 - tModLoader ExampleMod source-dependent projectile example showing `GlobalProjectile.OnSpawn(IEntitySource source)` with `EntitySource_Parent`: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/EntitySources/ExampleSourceDependentTweaks.cs
 - tModLoader ExampleMod projectile net-sync example showing per-projectile state via `SendExtraAI` / `ReceiveExtraAI`: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/GlobalProjectiles/ExampleProjectileNetSync.cs
 - tModLoader `GlobalProjectile` grapple hook reference (`CanUseGrapple`, `GrappleCanLatchOnTo`): https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalProjectile.cs
+- tModLoader `GlobalProjectile` draw hooks, especially `PreDrawExtras(...)` and `PreDraw(...)` for hiding boss-owned projectiles under `InvisibleBoss`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalProjectile.cs
 - tModLoader `ProjectileLoader` grapple dispatch and hook combination semantics: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/ProjectileLoader.cs
 - tModLoader ExampleMod grapple example showing the dedicated hook surface: https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Tools/ExampleHook.cs
 - tModLoader `GlobalNPC` hook reference, especially `PreAI`, `AI`, and `PostAI`: https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/ModLoader/GlobalNPC.cs
