@@ -17,6 +17,8 @@ public sealed class BossFightSourceProjectile : GlobalProjectile
 
     private int _sourceBossType = -1;
 
+    public int SourceBossType => _sourceBossType;
+
     public bool IsFromCurrentBossFight =>
         _sourceBossType >= 0 &&
         BossHexManager.IsBossFightActive(_sourceBossType);

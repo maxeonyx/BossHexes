@@ -30,9 +30,9 @@ namespace BossHexes.Common.Systems;
  * FLASHY HEXES:
  * 
  * InvisibleBoss - PARTIALLY IMPLEMENTED
- *   - Currently: Hides the boss sprite, boss-owned projectiles, boss head / minimap icon, and boss UI bars / hover name surfaces
+ *   - Currently: Hides the boss sprite, boss-owned projectiles, boss-linked spawned NPCs, boss head / minimap icon, and boss UI bars / hover name surfaces
  *   - TODO: Hide dust/particles spawned by boss
- *   - TODO: Handle boss minions (Skeletron hands, Plantera tentacles, etc.)
+ *   - TODO: Confirm coverage for linked entities that do not spawn with clean boss provenance
  * 
  * Blackout - NEEDS TESTING
  *   - Verify it actually works and creates the intended darkness effect

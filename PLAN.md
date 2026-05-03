@@ -14,7 +14,7 @@
 
 #### Rollable flashy hexes
 
-- `InvisibleBoss` — partial. The boss sprite, boss-owned projectiles, boss head / minimap icon, and boss UI bars / hover name surfaces are now hidden using the real draw hooks plus per-projectile boss-fight provenance, and worm segments are covered by the root-aware fight check. Dust and boss-linked non-worm entities can still leak the boss.
+- `InvisibleBoss` — partial. The boss sprite, boss-owned projectiles, boss-linked spawned NPCs, boss head / minimap icon, and boss UI bars / hover name surfaces are now hidden using the real draw hooks plus explicit boss-fight provenance, and worm segments are covered by the root-aware fight check. Dust and linked entities that do not spawn with clean boss provenance can still leak the boss.
 - `WingClip` — implemented. It now blocks sustained flight without collapsing into `Grounded`: wing and rocket resources are zeroed on the owning player, and an explicit set of flying / hovering mounts is cleanly dismounted. Normal jumps and extra jumps are still allowed.
 - `Blackout` — shaky. Applying vanilla `Blackout` is principled, but it still needs real gameplay verification for whether it creates the intended darkness effect.
 - `TinyFastBoss` / `HugeBoss` — movement-only for now. Size changes are real, and the speed effect is intentionally post-`VanillaAI` velocity nudging rather than claimed attack cadence / AI timing. Still needs gameplay testing and tuning across bosses. Worm coverage is now handled by the root-aware current-fight check.
@@ -31,7 +31,7 @@
 
 #### Rollable constraint hexes
 
-- `NoRangedDamage` / `NoMeleeDamage` / `NoMagicDamage` — now principled in hook choice and hit classification, but still incomplete for worm / multi-segment bosses because those hits often land on NPCs without `boss=true`.
+- `NoRangedDamage` / `NoMeleeDamage` / `NoMagicDamage` — implemented. They now use boss-side hit hooks with principled item / projectile classification, and worm / multi-segment coverage follows the root-aware fight check instead of raw `npc.boss`.
 - `Grounded` — implemented. Jump input is now blocked in `ModPlayer.SetControls()`, extra jumps are denied in `ModPlayer.CanStartExtraJump(...)`, and ongoing jump state is canceled via `Player.jump = 0` plus `Player.StopExtraJumpInProgress()` instead of zeroing upward velocity.
 - `NoGrapple` — implemented. New grapple attempts are now blocked in projectile grapple hooks (`CanUseGrapple`), in-flight hooks are prevented from latching via `GrappleCanLatchOnTo`, and already-active hooks are cleared from player state while the hex is active. Grapple classification now uses Terraria's `Main.projHook` source of truth instead of inferring from `aiStyle == 7`.
 

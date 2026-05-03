@@ -1,11 +1,15 @@
 using System;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Chat;
+using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 using BossHexes.Common.Config;
+using BossHexes.Common.GlobalProjectiles;
 using BossHexes.Common.Systems;
 
 namespace BossHexes.Common.GlobalNPCs;
@@ -22,9 +26,12 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     // Track if we've applied initial scale to this boss
     private bool _appliedInitialScale;
     private float _originalScale = 1f;
+    private int _sourceBossType = -1;
 
     public override void OnSpawn(NPC npc, Terraria.DataStructures.IEntitySource source)
     {
+        _sourceBossType = ResolveSourceBossType(source);
+
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
             return;
@@ -87,6 +94,20 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         }
     }
 
+    public override void SendExtraAI(NPC npc, BitWriter bitWriter, BinaryWriter binaryWriter)
+    {
+        bitWriter.WriteBit(_sourceBossType >= 0);
+        if (_sourceBossType >= 0)
+            binaryWriter.Write(_sourceBossType);
+    }
+
+    public override void ReceiveExtraAI(NPC npc, BitReader bitReader, BinaryReader binaryReader)
+    {
+        _sourceBossType = bitReader.ReadBit()
+            ? binaryReader.ReadInt32()
+            : -1;
+    }
+
     public override void AI(NPC npc)
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
@@ -136,7 +157,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return true;
 
-        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+        if (!TryGetVisibilityHexes(npc, out var hexes))
             return true;
 
         // InvisibleBoss: don't draw the boss at all
@@ -154,7 +175,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return;
 
-        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+        if (!TryGetVisibilityHexes(npc, out var hexes))
             return;
 
         if (hexes.Flashy == FlashyHex.InvisibleBoss)
@@ -167,7 +188,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return null;
 
-        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+        if (!TryGetVisibilityHexes(npc, out var hexes))
             return null;
 
         if (hexes.Flashy == FlashyHex.InvisibleBoss)
@@ -182,7 +203,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return true;
 
-        if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
+        if (!TryGetVisibilityHexes(npc, out var hexes))
             return true;
 
         if (hexes.Flashy == FlashyHex.InvisibleBoss)
@@ -222,6 +243,22 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             return false;
 
         return BossHexManager.TryGetActiveHexes(npc, out hexes);
+    }
+
+    private bool TryGetVisibilityHexes(NPC npc, out ActiveHexes hexes)
+    {
+        hexes = null;
+
+        if (BossHexManager.TryGetActiveHexes(npc, out hexes))
+            return true;
+
+        if (_sourceBossType < 0)
+            return false;
+
+        if (!BossHexManager.IsBossFightActive(_sourceBossType))
+            return false;
+
+        return BossHexManager.TryGetActiveHexes(_sourceBossType, out hexes);
     }
 
     private static void ApplyBossDamageTakenModifier(ref NPC.HitModifiers modifiers, ActiveHexes hexes)
@@ -330,5 +367,67 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(clearMessage), Color.LimeGreen);
         else
             Main.NewText(clearMessage, Color.LimeGreen);
+    }
+
+    private static int ResolveSourceBossType(IEntitySource source)
+    {
+        if (TryGetSourceBossType(source, out int bossType))
+            return bossType;
+
+        if (source is IEntitySource_OnHit onHit && TryGetSourceBossType(onHit.Attacker, out bossType))
+            return bossType;
+
+        if (source is IEntitySource_OnHurt onHurt && TryGetSourceBossType(onHurt.Attacker, out bossType))
+            return bossType;
+
+        return -1;
+    }
+
+    private static bool TryGetSourceBossType(IEntitySource source, out int bossType)
+    {
+        bossType = -1;
+
+        if (source is not EntitySource_Parent parent)
+            return false;
+
+        return TryGetSourceBossType(parent.Entity, out bossType);
+    }
+
+    private static bool TryGetSourceBossType(Entity entity, out int bossType)
+    {
+        bossType = -1;
+
+        if (entity is NPC npc)
+            return TryGetSourceBossType(npc, out bossType);
+
+        if (entity is Projectile projectile)
+        {
+            var bossSource = projectile.GetGlobalProjectile<BossFightSourceProjectile>();
+            if (!bossSource.IsFromCurrentBossFight)
+                return false;
+
+            bossType = bossSource.SourceBossType;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetSourceBossType(NPC npc, out int bossType)
+    {
+        bossType = -1;
+
+        if (BossHexManager.TryGetActiveBossFight(npc, out bossType, out _))
+            return true;
+
+        var bossSource = npc.GetGlobalNPC<BossHexGlobalNPC>();
+        if (bossSource._sourceBossType < 0)
+            return false;
+
+        if (!BossHexManager.IsBossFightActive(bossSource._sourceBossType))
+            return false;
+
+        bossType = bossSource._sourceBossType;
+        return true;
     }
 }
