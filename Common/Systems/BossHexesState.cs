@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -36,6 +37,16 @@ public sealed class BossHexesState : ModSystem
     public override void LoadWorldData(TagCompound tag)
     {
         BossHexManager.LoadWorldData(tag);
+    }
+
+    public override void NetSend(BinaryWriter writer)
+    {
+        BossHexManager.WriteSync(writer);
+    }
+
+    public override void NetReceive(BinaryReader reader)
+    {
+        BossHexManager.ReadSync(reader);
     }
 
     public override void PostUpdateWorld()

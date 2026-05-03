@@ -112,15 +112,6 @@ public sealed class BossHexesPlayer : ModPlayer
         ApplyExtraPotionSickness();
     }
 
-    public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
-    {
-        // When a player joins, sync the current hex state to them
-        if (Main.netMode == NetmodeID.Server && BossHexManager.HasAnyActiveHexes)
-        {
-            BossHexManager.SendSync(Mod, toWho, fromWho);
-        }
-    }
-
     public override void SetControls()
     {
         if (ShouldApplyReversal() && HasPlayerMovementAuthority(Player))

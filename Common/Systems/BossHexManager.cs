@@ -690,27 +690,40 @@ public static class BossHexManager
 
         ModPacket packet = mod.GetPacket();
         packet.Write((byte)BossHexes.MessageType.SyncHexes);
-        packet.Write(_activeHexesByBossType.Count);
+        WriteSync(packet);
+
+        packet.Send(toWho, ignoreClient);
+    }
+
+    public static void WriteSync(BinaryWriter writer)
+    {
+        writer.Write(_activeHexesByBossType.Count);
 
         foreach (var (bossType, activeHexes) in _activeHexesByBossType)
         {
-            packet.Write(bossType);
-            packet.Write((byte)activeHexes.Flashy);
-            packet.Write((byte)activeHexes.Modifier);
-            packet.Write((byte)activeHexes.Constraint);
-            packet.Write(activeHexes.EncounterId);
-            packet.Write(activeHexes.TimeLimitTicks);
-            packet.Write(activeHexes.TimeLimitMaxTicks);
-            packet.Write(activeHexes.PacifistHealerIndex);
+            writer.Write(bossType);
+            writer.Write((byte)activeHexes.Flashy);
+            writer.Write((byte)activeHexes.Modifier);
+            writer.Write((byte)activeHexes.Constraint);
+            writer.Write(activeHexes.EncounterId);
+            writer.Write(activeHexes.TimeLimitTicks);
+            writer.Write(activeHexes.TimeLimitMaxTicks);
+            writer.Write(activeHexes.PacifistHealerIndex);
         }
-
-        packet.Send(toWho, ignoreClient);
     }
 
     /// <summary>
     /// Receive hex state from the server. Called on multiplayer clients only.
     /// </summary>
     public static void ReceiveSync(BinaryReader reader)
+    {
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
+        ReadSync(reader);
+    }
+
+    public static void ReadSync(BinaryReader reader)
     {
         if (Main.netMode != NetmodeID.MultiplayerClient)
             return;
