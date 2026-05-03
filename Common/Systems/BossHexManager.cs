@@ -20,8 +20,8 @@ namespace BossHexes.Common.Systems;
  * 
  * Hexes needing testing:
  *   [ ] Blackout - does darkness actually work?
- *   [ ] TinyFastBoss - test across multiple bosses, is the 1/3 size + boosted movement version fun?
- *   [ ] HugeBoss - test across multiple bosses, is the 3x size + boosted movement version noticeable/fun?
+ *   [ ] TinyFastBoss - test across multiple bosses, is the 1/3 physical size + boosted movement version fun?
+ *   [ ] HugeBoss - test across multiple bosses, is the 3x physical size + boosted movement version noticeable/fun?
  *   [ ] UnstableGravity - does it feel right?
  *   [ ] MeteorShower - DONE, working well at 0.35 multiplier
  * 

@@ -23,9 +23,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     // Instance data per NPC - needed for per-NPC state
     public override bool InstancePerEntity => true;
 
-    // Track if we've applied initial scale to this boss
+    // Track if we've applied the one-time size mutation to this NPC
     private bool _appliedInitialScale;
     private float _originalScale = 1f;
+    private int _originalWidth;
+    private int _originalHeight;
     private int _sourceBossType = -1;
 
     public override void OnSpawn(NPC npc, Terraria.DataStructures.IEntitySource source)
@@ -134,19 +136,21 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
             return;
 
-        // Apply scale changes (only once per boss)
-        if (!_appliedInitialScale && hexes.HasAnyHex)
+        // Apply size changes (only once per boss)
+        if (!_appliedInitialScale && (hexes.Flashy == FlashyHex.TinyFastBoss || hexes.Flashy == FlashyHex.HugeBoss))
         {
             _originalScale = npc.scale;
+            _originalWidth = npc.width;
+            _originalHeight = npc.height;
             _appliedInitialScale = true;
 
             if (hexes.Flashy == FlashyHex.TinyFastBoss)
             {
-                npc.scale = _originalScale * 0.33f;  // 1/3 size
+                ApplySizeMultiplier(npc, 0.33f); // 1/3 size
             }
             else if (hexes.Flashy == FlashyHex.HugeBoss)
             {
-                npc.scale = _originalScale * 3f;  // 3x size
+                ApplySizeMultiplier(npc, 3f); // 3x size
             }
         }
     }
@@ -291,16 +295,26 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     private void ApplyBossFlashyEffects(NPC npc, ActiveHexes hexes)
     {
-        // TinyFastBoss: boosted movement speed (scale handled in PostAI)
+        // TinyFastBoss: boosted movement speed (size handled in PostAI)
         if (hexes.Flashy == FlashyHex.TinyFastBoss)
         {
             ApplySpeedMultiplier(npc, 2f, 25f);
         }
-        // HugeBoss: boosted movement speed (scale handled in PostAI)
+        // HugeBoss: boosted movement speed (size handled in PostAI)
         else if (hexes.Flashy == FlashyHex.HugeBoss)
         {
             ApplySpeedMultiplier(npc, 1.75f, 22f);
         }
+    }
+
+    private void ApplySizeMultiplier(NPC npc, float sizeMultiplier)
+    {
+        Vector2 center = npc.Center;
+
+        npc.scale = _originalScale * sizeMultiplier;
+        npc.width = Math.Max(1, (int)Math.Round(_originalWidth * sizeMultiplier));
+        npc.height = Math.Max(1, (int)Math.Round(_originalHeight * sizeMultiplier));
+        npc.Center = center;
     }
 
     private void ApplySpeedMultiplier(NPC npc, float speedMult, float maxSpeed)
