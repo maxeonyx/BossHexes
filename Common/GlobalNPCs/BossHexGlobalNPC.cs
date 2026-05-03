@@ -46,12 +46,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (!npc.boss)
             return;
 
-        // Trigger hex rolling via the manager
-        BossHexManager.OnBossSpawn(npc.type);
-
-        // Only announce once per boss spawn (server or singleplayer)
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
+
+        // Trigger hex rolling via the manager only where fight state is authoritative.
+        BossHexManager.OnBossSpawn(npc.type);
 
         if (!BossHexManager.TryGetActiveHexes(npc.type, out var hexes) || !hexes.HasAnyHex)
             return;
