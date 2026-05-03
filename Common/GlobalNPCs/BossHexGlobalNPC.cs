@@ -493,14 +493,6 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
         TryAddReferencedFight(candidateFights, npc.realLife, npc.whoAmI);
 
-        foreach (float aiValue in npc.ai)
-        {
-            if (!TryGetReferencedNpcIndexFromAi(aiValue, out int npcIndex))
-                continue;
-
-            TryAddReferencedFight(candidateFights, npcIndex, npc.whoAmI);
-        }
-
         if (candidateFights.Count != 1)
             return false;
 
@@ -525,26 +517,5 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
         if (TryGetSourceFight(referencedNpc, out int bossType, out int encounterId))
             candidateFights.Add((bossType, encounterId));
-    }
-
-    private static bool TryGetReferencedNpcIndexFromAi(float aiValue, out int npcIndex)
-    {
-        npcIndex = -1;
-
-        if (float.IsNaN(aiValue) || float.IsInfinity(aiValue))
-            return false;
-
-        if (Math.Abs(aiValue) < 0.001f)
-            return false;
-
-        int roundedIndex = (int)Math.Round(aiValue);
-        if (Math.Abs(aiValue - roundedIndex) > 0.001f)
-            return false;
-
-        if (roundedIndex < 0 || roundedIndex >= Main.maxNPCs)
-            return false;
-
-        npcIndex = roundedIndex;
-        return true;
     }
 }
