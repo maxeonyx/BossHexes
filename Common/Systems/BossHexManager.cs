@@ -265,25 +265,26 @@ public static class BossHexManager
         _nextEncounterId = 1;
     }
 
-    public static void OnBossSpawn(int bossType)
+    public static bool OnBossSpawn(int bossType)
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
-            return;
+            return false;
 
         // Already fighting this boss type
         if (_activeHexesByBossType.ContainsKey(bossType))
-            return;
+            return false;
 
         var persistedHexes = GetOrRollPersistedHexes(bossType, cfg);
         if (persistedHexes == null)
-            return;
+            return false;
 
         var activeHexes = CreateActiveFightState(persistedHexes);
-        if (activeHexes.HasAnyHex)
-        {
-            _activeHexesByBossType[bossType] = activeHexes;
-        }
+        if (!activeHexes.HasAnyHex)
+            return false;
+
+        _activeHexesByBossType[bossType] = activeHexes;
+        return true;
     }
 
     public static void OnBossDefeated(int bossType, int defeatedBossRootWhoAmI = -1)

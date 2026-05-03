@@ -58,7 +58,9 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             return;
 
         // Trigger hex rolling via the manager only where fight state is authoritative.
-        BossHexManager.OnBossSpawn(root.type);
+        bool activatedFight = BossHexManager.OnBossSpawn(root.type);
+        if (!activatedFight)
+            return;
 
         if (!BossHexManager.TryGetActiveHexes(root.type, out var hexes) || !hexes.HasAnyHex)
             return;
