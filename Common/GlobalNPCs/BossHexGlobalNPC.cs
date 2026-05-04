@@ -24,11 +24,11 @@ public sealed class BossHexGlobalNPC : GlobalNPC
     // Instance data per NPC - needed for per-NPC state
     public override bool InstancePerEntity => true;
 
-    // Track if we've applied the one-time size mutation to this NPC
-    private bool _appliedInitialScale;
-    private float _originalScale = 1f;
-    private int _originalWidth;
-    private int _originalHeight;
+    private bool _hasSyncedSizeState;
+    private float _baseScale = 1f;
+    private int _baseWidth;
+    private int _baseHeight;
+    private float _sizeMultiplier = 1f;
     private int _sourceBossType = -1;
     private int _sourceEncounterId = -1;
 
@@ -89,11 +89,21 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void SendExtraAI(NPC npc, BitWriter bitWriter, BinaryWriter binaryWriter)
     {
+        bitWriter.WriteBit(_hasSyncedSizeState);
+
         bool hasSourceBossType = _sourceBossType >= 0;
         bool hasSourceEncounterId = hasSourceBossType && _sourceEncounterId >= 0;
 
         bitWriter.WriteBit(hasSourceBossType);
         bitWriter.WriteBit(hasSourceEncounterId);
+
+        if (_hasSyncedSizeState)
+        {
+            binaryWriter.Write(_baseScale);
+            binaryWriter.Write(_baseWidth);
+            binaryWriter.Write(_baseHeight);
+            binaryWriter.Write(_sizeMultiplier);
+        }
 
         if (hasSourceBossType)
         {
@@ -106,8 +116,26 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
     public override void ReceiveExtraAI(NPC npc, BitReader bitReader, BinaryReader binaryReader)
     {
+        bool hasSyncedSizeState = bitReader.ReadBit();
         bool hasSourceBossType = bitReader.ReadBit();
         bool hasSourceEncounterId = bitReader.ReadBit();
+
+        if (hasSyncedSizeState)
+        {
+            _baseScale = binaryReader.ReadSingle();
+            _baseWidth = binaryReader.ReadInt32();
+            _baseHeight = binaryReader.ReadInt32();
+            _sizeMultiplier = binaryReader.ReadSingle();
+            _hasSyncedSizeState = true;
+            ApplySyncedSizeState(npc);
+        }
+        else
+        {
+            if (_hasSyncedSizeState)
+                RestoreBaseSizeState(npc);
+
+            ClearSyncedSizeState();
+        }
 
         if (!hasSourceBossType)
         {
@@ -149,25 +177,26 @@ public sealed class BossHexGlobalNPC : GlobalNPC
             return;
 
         if (!BossHexManager.TryGetActiveHexes(npc, out var hexes))
-            return;
-
-        // Apply size changes (only once per boss)
-        if (!_appliedInitialScale && (hexes.Flashy == FlashyHex.TinyFastBoss || hexes.Flashy == FlashyHex.HugeBoss))
         {
-            _originalScale = npc.scale;
-            _originalWidth = npc.width;
-            _originalHeight = npc.height;
-            _appliedInitialScale = true;
-
-            if (hexes.Flashy == FlashyHex.TinyFastBoss)
-            {
-                ApplySizeMultiplier(npc, 0.33f); // 1/3 size
-            }
-            else if (hexes.Flashy == FlashyHex.HugeBoss)
-            {
-                ApplySizeMultiplier(npc, 3f); // 3x size
-            }
+            ClearSizeStateIfNeeded(npc);
+            return;
         }
+
+        float desiredSizeMultiplier = GetSizeMultiplier(hexes);
+        if (desiredSizeMultiplier <= 0f)
+        {
+            ClearSizeStateIfNeeded(npc);
+            return;
+        }
+
+        if (HasBossMovementAuthority())
+        {
+            EnsureAuthoritativeSizeState(npc, desiredSizeMultiplier);
+            ApplySyncedSizeState(npc);
+            return;
+        }
+
+        ApplyReplicatedSizeIfAvailable(npc);
     }
 
     public override bool PreDraw(NPC npc, Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
@@ -316,14 +345,86 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         }
     }
 
-    private void ApplySizeMultiplier(NPC npc, float sizeMultiplier)
+    private static float GetSizeMultiplier(ActiveHexes hexes)
+    {
+        return hexes.Flashy switch
+        {
+            FlashyHex.TinyFastBoss => 0.33f,
+            FlashyHex.HugeBoss => 3f,
+            _ => 0f,
+        };
+    }
+
+    private void EnsureAuthoritativeSizeState(NPC npc, float sizeMultiplier)
+    {
+        if (_hasSyncedSizeState && Math.Abs(_sizeMultiplier - sizeMultiplier) < 0.001f)
+            return;
+
+        if (_hasSyncedSizeState)
+            RestoreBaseSizeState(npc);
+
+        _baseScale = npc.scale;
+        _baseWidth = npc.width;
+        _baseHeight = npc.height;
+        _sizeMultiplier = sizeMultiplier;
+        _hasSyncedSizeState = true;
+        npc.netUpdate = true;
+    }
+
+    private void ApplyReplicatedSizeIfAvailable(NPC npc)
+    {
+        if (!_hasSyncedSizeState)
+            return;
+
+        ApplySyncedSizeState(npc);
+    }
+
+    private void ClearSizeStateIfNeeded(NPC npc)
+    {
+        if (!_hasSyncedSizeState)
+            return;
+
+        if (HasBossMovementAuthority())
+        {
+            RestoreBaseSizeState(npc);
+            ClearSyncedSizeState();
+            npc.netUpdate = true;
+            return;
+        }
+
+        ApplyReplicatedSizeIfAvailable(npc);
+    }
+
+    private void ApplySyncedSizeState(NPC npc)
+    {
+        if (!_hasSyncedSizeState)
+            return;
+
+        Vector2 center = npc.Center;
+
+        npc.scale = _baseScale * _sizeMultiplier;
+        npc.width = Math.Max(1, (int)Math.Round(_baseWidth * _sizeMultiplier));
+        npc.height = Math.Max(1, (int)Math.Round(_baseHeight * _sizeMultiplier));
+        npc.Center = center;
+    }
+
+    private void RestoreBaseSizeState(NPC npc)
     {
         Vector2 center = npc.Center;
 
-        npc.scale = _originalScale * sizeMultiplier;
-        npc.width = Math.Max(1, (int)Math.Round(_originalWidth * sizeMultiplier));
-        npc.height = Math.Max(1, (int)Math.Round(_originalHeight * sizeMultiplier));
+        npc.scale = _baseScale;
+        npc.width = Math.Max(1, _baseWidth);
+        npc.height = Math.Max(1, _baseHeight);
         npc.Center = center;
+    }
+
+    private void ClearSyncedSizeState()
+    {
+        _hasSyncedSizeState = false;
+        _baseScale = 1f;
+        _baseWidth = 0;
+        _baseHeight = 0;
+        _sizeMultiplier = 1f;
     }
 
     private void ApplySpeedMultiplier(NPC npc, float speedMult, float maxSpeed)
