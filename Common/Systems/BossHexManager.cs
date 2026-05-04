@@ -406,6 +406,40 @@ public static class BossHexManager
         return true;
     }
 
+    private static bool TryGetBossBodyRoot(NPC npc, out NPC root)
+    {
+        root = npc;
+
+        if (!npc.active)
+            return false;
+
+        if (npc.boss)
+        {
+            if (TryGetBossRealLifeRoot(npc, out var realLifeRoot))
+                root = realLifeRoot;
+
+            return !ShouldExcludeVanillaBossBody(npc, root);
+        }
+
+        if (!TryGetBossRealLifeRoot(npc, out var structuralRoot))
+            return false;
+
+        if (ShouldExcludeVanillaBossBody(npc, structuralRoot))
+            return false;
+
+        root = structuralRoot;
+        return true;
+    }
+
+    private static bool ShouldExcludeVanillaBossBody(NPC npc, NPC root)
+    {
+        return root.type switch
+        {
+            NPCID.EyeofCthulhu => npc.type == NPCID.ServantofCthulhu,
+            _ => false,
+        };
+    }
+
     public static bool TryGetActiveHexes(int bossType, out ActiveHexes hexes)
     {
         return _activeHexesByBossType.TryGetValue(bossType, out hexes);
@@ -475,6 +509,11 @@ public static class BossHexManager
         return TryGetActiveBossFight(npc, out bossType, out _, out hexes);
     }
 
+    public static bool TryGetActiveBossBodyFight(NPC npc, out int bossType, out ActiveHexes hexes)
+    {
+        return TryGetActiveBossBodyFight(npc, out bossType, out _, out hexes);
+    }
+
     public static bool TryGetActiveBossFight(NPC npc, out int bossType, out int encounterId, out ActiveHexes hexes)
     {
         bossType = -1;
@@ -482,6 +521,23 @@ public static class BossHexManager
         hexes = null;
 
         if (!TryGetBossRoot(npc, out var root))
+            return false;
+
+        bossType = root.type;
+        if (!TryGetActiveHexes(bossType, out hexes))
+            return false;
+
+        encounterId = hexes.EncounterId;
+        return true;
+    }
+
+    public static bool TryGetActiveBossBodyFight(NPC npc, out int bossType, out int encounterId, out ActiveHexes hexes)
+    {
+        bossType = -1;
+        encounterId = -1;
+        hexes = null;
+
+        if (!TryGetBossBodyRoot(npc, out var root))
             return false;
 
         bossType = root.type;
@@ -505,6 +561,13 @@ public static class BossHexManager
     public static bool IsPartOfBossFight(NPC npc, int bossType, int encounterId)
     {
         return TryGetBossRoot(npc, out var root)
+            && root.type == bossType
+            && IsBossFightActive(bossType, encounterId);
+    }
+
+    public static bool IsPartOfBossBodyFight(NPC npc, int bossType, int encounterId)
+    {
+        return TryGetBossBodyRoot(npc, out var root)
             && root.type == bossType
             && IsBossFightActive(bossType, encounterId);
     }

@@ -243,7 +243,7 @@ public sealed class BossHexGlobalNPC : GlobalNPC
         if (cfg == null || !cfg.EnableBossHexes)
             return false;
 
-        return BossHexManager.TryGetActiveBossFight(npc, out _, out hexes);
+        return BossHexManager.TryGetActiveBossBodyFight(npc, out _, out hexes);
     }
 
     private bool TryGetVisibilityHexes(NPC npc, out ActiveHexes hexes)
