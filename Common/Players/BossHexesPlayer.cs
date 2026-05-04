@@ -190,10 +190,10 @@ public sealed class BossHexesPlayer : ModPlayer
             case FlashyHex.WingClip:
                 ApplyWingClip();
                 break;
-                
+            
             case FlashyHex.Blackout:
                 // Extreme darkness - apply Blackout debuff
-                Player.AddBuff(BuffID.Blackout, 2);
+                ReapplyPersistentDebuff(BuffID.Blackout);
                 break;
                 
             // Other flashy hexes are handled elsewhere:
@@ -214,12 +214,12 @@ public sealed class BossHexesPlayer : ModPlayer
         {
             case ModifierHex.BrokenArmor:
                 // Defense halved (apply Broken Armor debuff)
-                Player.AddBuff(BuffID.BrokenArmor, 2);
+                ReapplyPersistentDebuff(BuffID.BrokenArmor);
                 break;
                 
             case ModifierHex.Sluggish:
                 // Slow debuff (reapplied every frame so it appears permanent)
-                Player.AddBuff(BuffID.Slow, 2);
+                ReapplyPersistentDebuff(BuffID.Slow);
                 break;
                 
             case ModifierHex.SlowAttack:
@@ -281,6 +281,14 @@ public sealed class BossHexesPlayer : ModPlayer
         {
             Player.mount.Dismount(Player);
         }
+    }
+
+    private void ReapplyPersistentDebuff(int buffType)
+    {
+        if (!HasPlayerStateAuthority(Player))
+            return;
+
+        Player.AddBuff(buffType, 2);
     }
 
     private static bool IsBlockedFlightMount(int mountType)
