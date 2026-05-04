@@ -75,15 +75,20 @@ public sealed class BossHexesState : ModSystem
         hexes = null;
 
         if (!BossHexManager.TryEnsureActiveHexes(bossType, spawningBossRootWhoAmI, out hexes, out bool activatedFight))
+        {
+            BossHexManager.LogActivation($"ensure active fight failed bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
             return false;
+        }
 
         encounterId = hexes.EncounterId;
+        BossHexManager.LogActivation($"ensure active fight resolved bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI} encounterId={encounterId} activated={activatedFight}");
 
         if (activatedFight)
         {
             if (Main.netMode == NetmodeID.Server)
                 BossHexManager.SendSync(Mod, -1, -1);
 
+            BossHexManager.LogActivation($"ensure active fight announcing bossType={bossType} encounterId={encounterId} hexes={BossHexManager.DescribeHexes(hexes)}");
             AnnounceActivatedFight(hexes);
         }
 
@@ -106,6 +111,7 @@ public sealed class BossHexesState : ModSystem
 
             foreach (var (_, hexes) in activatedMissingFights)
             {
+                BossHexManager.LogActivation($"world backstop announcing encounterId={hexes.EncounterId} hexes={BossHexManager.DescribeHexes(hexes)}");
                 AnnounceActivatedFight(hexes);
             }
         }
@@ -282,6 +288,8 @@ public sealed class BossHexesState : ModSystem
     {
         if (hexes == null || !hexes.HasAnyHex)
             return;
+
+        BossHexManager.LogActivation($"announce activated fight encounterId={hexes.EncounterId} hexes={BossHexManager.DescribeHexes(hexes)} netMode={Main.netMode}");
 
         var hexNames = hexes.GetActiveHexNames();
         if (hexNames.Count == 0)

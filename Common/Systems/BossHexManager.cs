@@ -252,6 +252,8 @@ public class ActiveHexes
 /// </summary>
 public static class BossHexManager
 {
+    private const string ActivationLogPrefix = "[BossFightActivation]";
+
     // Persisted hexes per boss type (by NPC type ID)
     private static readonly Dictionary<int, ActiveHexes> _persistedHexes = new();
 
@@ -276,31 +278,51 @@ public static class BossHexManager
     {
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
+        {
+            LogActivation($"spawn ignored: config disabled bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
             return false;
+        }
 
         if (_activeHexesByBossType.ContainsKey(bossType))
         {
             if (IsActiveFightOwnedByRoot(bossType, spawningBossRootWhoAmI))
+            {
+                LogActivation($"spawn no-op: active fight already owned by same root bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
                 return false;
+            }
 
             if (TryAdoptActiveFightOwner(bossType, spawningBossRootWhoAmI))
+            {
+                LogActivation($"spawn no-op: adopted orphaned active fight bossType={bossType} newRootWhoAmI={spawningBossRootWhoAmI}");
                 return false;
+            }
 
             if (HasOtherActiveBossRootOfType(bossType, spawningBossRootWhoAmI))
+            {
+                LogActivation($"spawn no-op: same boss type already active bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
                 return false;
+            }
 
+            LogActivation($"spawn replacing stale active fight bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
             _activeHexesByBossType.Remove(bossType);
         }
 
         var persistedHexes = GetOrRollPersistedHexes(bossType, cfg);
         if (persistedHexes == null)
+        {
+            LogActivation($"spawn produced no active hexes bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
             return false;
+        }
 
         var activeHexes = CreateActiveFightState(persistedHexes, spawningBossRootWhoAmI);
         if (!activeHexes.HasAnyHex)
+        {
+            LogActivation($"spawn rolled empty active hexes bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI}");
             return false;
+        }
 
         _activeHexesByBossType[bossType] = activeHexes;
+        LogActivation($"activated fight bossType={bossType} rootWhoAmI={spawningBossRootWhoAmI} encounterId={activeHexes.EncounterId} hexes={DescribeHexes(activeHexes)}");
         return true;
     }
 
@@ -324,6 +346,7 @@ public static class BossHexManager
             if (!activeHexes.HasAnyHex)
                 continue;
 
+            LogActivation($"backstop activated missing fight bossType={root.type} rootWhoAmI={root.whoAmI} encounterId={activeHexes.EncounterId} hexes={DescribeHexes(activeHexes)}");
             activatedFights.Add(new KeyValuePair<int, ActiveHexes>(root.type, activeHexes));
         }
 
@@ -754,6 +777,8 @@ public static class BossHexManager
         if (Main.netMode != NetmodeID.Server)
             return;
 
+        mod.Logger.Info($"{ActivationLogPrefix} sending SyncHexes activeFightCount={_activeHexesByBossType.Count} toWho={toWho} ignoreClient={ignoreClient}");
+
         ModPacket packet = mod.GetPacket();
         packet.Write((byte)BossHexes.MessageType.SyncHexes);
         WriteSync(packet);
@@ -902,6 +927,19 @@ public static class BossHexManager
         _persistedHexes.Clear();
         _activeHexesByBossType.Clear();
         _nextEncounterId = 1;
+    }
+
+    internal static void LogActivation(string message)
+    {
+        ModContent.GetInstance<global::BossHexes.BossHexes>().Logger.Info($"{ActivationLogPrefix} {message}");
+    }
+
+    internal static string DescribeHexes(ActiveHexes hexes)
+    {
+        if (hexes == null || !hexes.HasAnyHex)
+            return "<none>";
+
+        return string.Join(", ", hexes.GetActiveHexNames());
     }
 
     /// <summary>

@@ -69,8 +69,9 @@
 2. **Persistence edge case** — previously, if EoW type was already in `_persistedHexes` with all `None` hexes, the spawn path would reuse that empty persisted roll. This happened if all three category configs were disabled when a boss first spawned, then re-enabled later. That empty-roll persistence path is now fixed, but it may not have been the cause of the reported incident.
 3. **Multiplayer sync issue** — `SyncHexes` packet didn't reach the client, so hexes were rolled on server but announcement never appeared client-side.
 4. **NPC spawn order / activation timing** — body/tail segments spawn first (they don't have `boss=true`), then head spawns. If something about the spawn source or timing prevents `OnSpawn` from firing on the head, hexes wouldn't roll. There is now a world-side activation backstop for a live boss root with missing active fight state, and linked NPC/projectile provenance can now also trigger that activation on the authoritative side when a live boss root is present but not yet active. The original reported incident still has not been manually reproduced.
+5. **Authoritative path discrimination now available in logs** — root-boss `OnSpawn`, `OnBossSpawn`, `TryEnsureActiveHexes`, world backstop activation, `SyncHexes` send, and announcement emission now log distinct activation-path messages so a future repro can distinguish activation failure from sync failure from announce/UI-only failure.
 
-**Next steps:** Add logging to `OnBossSpawn` and `OnSpawn` to trace the flow. Try to reproduce by breaking another shadow orb.
+**Next steps:** Try to reproduce by breaking another shadow orb and inspect the new activation-path logs on server/client to see whether the fight was created on root spawn, created by the world backstop, synced but not announced client-side, or never activated at all.
 
 ### Worm boss segments not affected by hex effects
 

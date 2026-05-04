@@ -46,27 +46,45 @@ public sealed class BossHexGlobalNPC : GlobalNPC
 
         var cfg = ModContent.GetInstance<BossHexesConfig>();
         if (cfg == null || !cfg.EnableBossHexes)
+        {
+            BossHexManager.LogActivation($"npc spawn ignored: config disabled npcType={npc.type} npcWhoAmI={npc.whoAmI}");
             return;
+        }
 
         if (!npc.boss)
+        {
+            BossHexManager.LogActivation($"npc spawn ignored: not boss npcType={npc.type} npcWhoAmI={npc.whoAmI}");
             return;
+        }
 
         if (!BossHexManager.TryGetBossRoot(npc, out var root) || root.whoAmI != npc.whoAmI)
+        {
+            BossHexManager.LogActivation($"npc spawn ignored: not root boss npcType={npc.type} npcWhoAmI={npc.whoAmI} realLife={npc.realLife}");
             return;
+        }
 
         if (Main.netMode == NetmodeID.MultiplayerClient)
+        {
+            BossHexManager.LogActivation($"npc spawn observed on client only npcType={npc.type} rootWhoAmI={root.whoAmI}");
             return;
+        }
 
         // Trigger hex rolling via the manager only where fight state is authoritative.
         bool activatedFight = BossHexManager.OnBossSpawn(root.type, root.whoAmI);
         if (!activatedFight)
+        {
+            BossHexManager.LogActivation($"npc spawn did not activate fight npcType={npc.type} rootWhoAmI={root.whoAmI}");
             return;
+        }
 
         if (Main.netMode == NetmodeID.Server)
             BossHexManager.SendSync(Mod, -1, -1);
 
         if (BossHexManager.TryGetActiveHexes(root.type, out var hexes))
+        {
+            BossHexManager.LogActivation($"npc spawn announcing fight bossType={root.type} rootWhoAmI={root.whoAmI} encounterId={hexes.EncounterId} hexes={BossHexManager.DescribeHexes(hexes)}");
             BossHexesState.AnnounceActivatedFight(hexes);
+        }
     }
 
     public override void SendExtraAI(NPC npc, BitWriter bitWriter, BinaryWriter binaryWriter)
