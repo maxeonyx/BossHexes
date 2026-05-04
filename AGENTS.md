@@ -16,6 +16,7 @@ Guidance specific to the `BossHexes` mod.
 - Use `CountsAsClass(...)`, not raw `DamageType == ...`, so derived and custom classes behave correctly.
 - Be careful with Terraria authority boundaries: player state changes belong on the player side; world and boss state belong on the server/world side.
 - Worm and multi-segment bosses are a known architectural trap here. `npc.boss` usually only applies to the head, so boss-side effects often need segment-aware logic.
+- For linked-fight provenance beyond spawn source, attacker provenance, and explicit structural links like `realLife`, do not restore generic `ai[]` guessing. Only add exact vanilla carve-outs one case at a time after a concrete reproduced or decompiled owner/link contract is established.
 - There does not currently seem to be a generic tModLoader hook for "run arbitrary vanilla boss AI / attack cadence faster". Generic speed hexes that only adjust `npc.velocity` after vanilla AI are approximations, not true cadence changes.
 - There does not currently seem to be a generic public tModLoader source of truth for "this mount is a flying mount". For `WingClip`, treat wing / rocket flight through `Player.wingTime` and `Player.rocketTime`, and treat flying mounts through an explicit blocked-mount set plus `Player.mount.Dismount(Player)` on the owning player.
 
